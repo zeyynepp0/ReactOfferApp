@@ -56,13 +56,13 @@ return (
         <h2>Login</h2>
         <input
           type="text"
-          placeholder="Username"
+          placeholder="Kullanıcı adı"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <input
           type="password"
-          placeholder="Password"
+          placeholder="Şifre"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
