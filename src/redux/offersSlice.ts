@@ -3,10 +3,12 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 
 
 
+// Temel tipler
 export type KDV = 0.08 | 0.18 | 0.20;
 export type OfferStatus = 'Taslak' | 'Onay Bekliyor' | 'Onaylandı';
 export type ItemType = 'Malzeme' | 'Hizmet';
 
+// Teklif üst bilgileri ve toplamlar
 export interface OfferItem {
   id: string;
   customerName: string;
@@ -21,6 +23,7 @@ export interface OfferItem {
   grandTotal: number; 
 }
 
+// Teklif satır yapısı
 export interface OfferLineItem {
   itemId: string;
   itemType: ItemType;
@@ -36,6 +39,7 @@ export interface OfferLineItem {
   totalPrice: number;
 }
 
+// Slice state
 interface OffersState {
   offers: OfferItem[];
 }

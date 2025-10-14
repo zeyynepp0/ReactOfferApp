@@ -13,13 +13,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Sayfa yüklendiğinde authentication durumunu kontrol et
   useEffect(() => {
-    // Sayfa yüklendiğinde authentication durumunu kontrol et
     dispatch(checkAuth());
   }, [dispatch]);
 
+  // Eğer kullanıcı giriş yapmamışsa login sayfasına yönlendir
   useEffect(() => {
-    // Eğer kullanıcı giriş yapmamışsa login sayfasına yönlendir
     if (!isAuthenticated) {
       navigate('/');
     }

@@ -6,18 +6,21 @@ import authReducer from './authSlice';
 
 import { combineReducers } from 'redux';
 
+// Uygulamanın tüm slice'larını birleştir
 const rootReducer = combineReducers({
   offers: offersReducer,
   auth: authReducer,
-});// diğer reducerlar eklenebilir
+}); // diğer reducerlar eklenebilir
 
+// Redux state'ini localStorage'a yazmak için persist yapılandırması
 const persistConfig = {
   key: 'root',
   storage,
-};// sayfa yenilendiğinde redux state kaybolmasın diye
+}; // sayfa yenilendiğinde redux state kaybolmasın diye
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
+// Persist edilmiş reducer ile store'u oluştur
 export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
@@ -26,11 +29,13 @@ export const store = configureStore({
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE', 'persist/PAUSE', 'persist/PURGE', 'persist/REGISTER'],
       },
     }),
-});// merkezi depo olarak kullanılmasını sağlar
+}); // merkezi depo olarak kullanılmasını sağlar
 
+// Persistor: store'u disk ile senkronize eder
 export const persistor = persistStore(store);
 
 // Root state type - manually defined to avoid persistence issues
+// Root state tipi: sayfalarda useSelector ile tip güvenli erişim sağlar
 export interface RootState {
   offers: {
     offers: any[];
@@ -48,4 +53,5 @@ export interface RootState {
   };
 }
 
-export type AppDispatch = typeof store.dispatch;// store'un dispatch fonksiyonunun tipini alır
+// store'un dispatch fonksiyonunun tipini alır
+export type AppDispatch = typeof store.dispatch;

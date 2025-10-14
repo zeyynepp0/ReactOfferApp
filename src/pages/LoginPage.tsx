@@ -3,8 +3,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { login, checkAuth } from "../redux/authSlice";
 import type { RootState } from "../redux/store";
-import "../css/LoginPage.css";
+// Tailwind used instead of CSS file
 
+// Basit demo login sayfası (admin/123)
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,16 +14,19 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
 
+  // Uygulama açıldığında mevcut oturum var mı kontrol et
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
 
+  // Giriş yapıldıysa teklif listesine yönlendir
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/offers');
     }
   }, [isAuthenticated, navigate]);
 
+  // Form gönderimi: basit kullanıcı adı/şifre kontrolü
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -51,26 +55,27 @@ export default function LoginPage() {
 
 
 return (
-    <div className="login-container">
-      <form className="login-box" onSubmit={handleSubmit}>
-        <h2>Login</h2>
+    <div className="flex justify-center items-center h-screen w-screen bg-[linear-gradient(135deg,#aabed3,#fed6e3)]">
+      <form className="bg-white px-10 py-10 rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.1)] w-[350px] max-w-[90%] text-center" onSubmit={handleSubmit}>
+        <h2 className="w-[107%] mb-7 text-[#f5a1bb] text-[50px]">Login</h2>
         <input
+          className="w-full p-3 my-[10px] border border-[#f5a1bb] rounded-lg text-[15px] focus:border-[#aabed3] outline-none"
           type="text"
           placeholder="Kullanıcı adı"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <input
+          className="w-full p-3 my-[10px] border border-[#f5a1bb] rounded-lg text-[15px] focus:border-[#aabed3] outline-none"
           type="password"
           placeholder="Şifre"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button type="submit">Login</button>
-        {error && <p className="error-message">{error}</p>}
+        <button className="w-[107%] p-3 bg-[#f5a1bb] text-white rounded-lg text-[16px] font-medium mt-[10px] transition-colors hover:bg-[#aabed3]" type="submit">Login</button>
+        {error && <p className="text-rose-600 mt-2 text-sm">{error}</p>}
       </form>
     </div>
-  
   );
 
 }

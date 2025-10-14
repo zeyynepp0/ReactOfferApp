@@ -1,17 +1,20 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+// Uygulamada oturum açan kullanıcının temel bilgileri
 interface User {
   id: string;
   username: string;
-  email: string;
+  
 }
 
+// Kimlik doğrulama durumunu tutar
 interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
   token: string | null;
 }
 
+// Login işleminde gelen veri yapısı
 interface LoginPayload {
   user: User;
   token: string;
@@ -21,7 +24,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   user: null,
   token: null,
-};// başlangıç durumu
+}; // başlangıç durumu
 
 const authSlice = createSlice({
   name: 'auth',
@@ -38,7 +41,7 @@ const authSlice = createSlice({
       state.token = null;
     },
     checkAuth: (state) => {
-      // localStorage'dan token kontrolü
+      // localStorage'dan token ve kullanıcı bilgisi kontrolü
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
       
@@ -49,7 +52,7 @@ const authSlice = createSlice({
           state.user = user;
           state.token = token;
         } catch (error) {
-          // Invalid JSON, clear storage
+          // Hatalı JSON ise storage'ı temizle
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         }

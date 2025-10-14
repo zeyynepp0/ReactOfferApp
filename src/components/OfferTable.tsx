@@ -1,8 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../redux/store';
-//import type { OfferLineItem } from '../redux/offersSlice';
-import '../css/OfferTable.css';
 
 interface OfferTableProps {
   setModalOpen: (value: boolean) => void;
@@ -10,18 +8,19 @@ interface OfferTableProps {
 }
 
 const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId }) => {
+  // Global store'dan teklifleri al
   const offers = useSelector((state: RootState) => state.offers.offers);
 
   return (
-    <div className="offer-table-container">
-      <table className="offer-table">
+    <div className="bg-white rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] overflow-x-auto">
+      <table className="w-full border-collapse">
         <thead>
           <tr>
-            <th>Teklif No</th>
-            <th>Müşteri Adı</th>
-            <th>Teklif Adı</th>
-            <th>Durum</th>
-            <th>Tarih</th>
+            <th className="bg-slate-200 p-3 text-left font-semibold">Teklif No</th>
+            <th className="bg-slate-200 p-3 text-left font-semibold">Müşteri Adı</th>
+            <th className="bg-slate-200 p-3 text-left font-semibold">Teklif Adı</th>
+            <th className="bg-slate-200 p-3 text-left font-semibold">Durum</th>
+            <th className="bg-slate-200 p-3 text-left font-semibold">Tarih</th>
           </tr>
         </thead>
         <tbody>
@@ -41,15 +40,21 @@ const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId
                   setModalOpen(true);
                 }}
               >
-                <td>{index + 1}</td>
-                <td>{offer.customerName}</td>
-                <td>{offer.offerName}</td>
-                <td>
-                  <span className={`status-pill status-${offer.offerStatus.replace(' ', '-').toLowerCase()}`}>
+                <td className="p-3 border-b border-slate-100">{index + 1}</td>
+                <td className="p-3 border-b border-slate-100">{offer.customerName}</td>
+                <td className="p-3 border-b border-slate-100">{offer.offerName}</td>
+                <td className="p-3 border-b border-slate-100">
+                  <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    offer.offerStatus === 'Taslak'
+                      ? 'bg-slate-100 text-slate-700'
+                      : offer.offerStatus === 'Onay Bekliyor'
+                      ? 'bg-yellow-100 text-amber-800'
+                      : 'bg-green-100 text-green-700'
+                  }`}>
                     {offer.offerStatus}
                   </span>
                 </td>
-                <td>{offer.offerDate}</td>
+                <td className="p-3 border-b border-slate-100">{offer.offerDate}</td>
                
               </tr>
             ))

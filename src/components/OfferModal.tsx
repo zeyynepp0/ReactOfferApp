@@ -1,97 +1,49 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addOffer, updateOffer, deleteOffer, type OfferItem, type OfferLineItem, type ItemType, type OfferStatus } from '../redux/offersSlice';
+import { addOffer, updateOffer, deleteOffer, type OfferItem, type OfferLineItem, type OfferStatus } from '../redux/offersSlice';
 import type { RootState } from '../redux/store';
 import { v4 as uuidv4 } from 'uuid';
-import '../css/OfferModal.css';
+import ErrorAlert from './offer-modal/ErrorAlert';
+import ItemRow from './offer-modal/ItemRow';
+import TotalsSummary from './offer-modal/TotalsSummary';
+import { computeLineDerived, computeLiveTotals, normalizeItems } from '../utils/offerCalculations';
 
-interface OfferModalProps {
-  setModalOpen: (value: boolean) => void;
-  editingOfferId: string | null;
+interface OfferModalProps {// teklif modalının props'ları
+  setModalOpen: (value: boolean) => void;// modal açık/kapalı
+  editingOfferId: string | null;// düzenlenecek teklifin id'si
 }
 
 const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId }) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch();// redux dispatch fonksiyonu
   const offers = useSelector((state: RootState) => state.offers.offers);
   const [customerName, setCustomerName] = useState('');
   const [offerName, setOfferName] = useState('');
   const [offerDate, setOfferDate] = useState('');
   const [offerStatus, setOfferStatus] = useState<OfferStatus>('Taslak');
-  const [items, setItems] = useState<OfferLineItem[]>([]);
-  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+  const [items, setItems] = useState<OfferLineItem[]>([]);// teklif satırları
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());// seçilen satırların id'leri
   const [formErrors, setFormErrors] = useState<string[]>([]);
-  const [focusedInputs, setFocusedInputs] = useState<Set<string>>(new Set());
-
   const isApproved = offerStatus === 'Onaylandı';
 
-  const getInputId = (itemIndex: number, field: string) => `${itemIndex}-${field}`;
-
-  const getDisplayValue = (itemIndex: number, field: string, value: number) => {
-    const inputId = getInputId(itemIndex, field);
-    if (focusedInputs.has(inputId) && value === 0) {
-      return '';
-    }
-    return value.toString();
-  };
-
-  const handleFocus = (itemIndex: number, field: string) => {
-    const inputId = getInputId(itemIndex, field);
-    setFocusedInputs(prev => new Set(prev).add(inputId));
-  };
-
-  const handleBlur = (itemIndex: number, field: string) => {
-    const inputId = getInputId(itemIndex, field);
-    setFocusedInputs(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(inputId);
-      return newSet;
-    });
-  };
-
-  useEffect(() => {
-    if (editingOfferId) {
-      const offer = offers.find(o => o.id === editingOfferId);
-      if (offer) {
-        setCustomerName(offer.customerName);
+  useEffect(() => {// editingOfferId değiştiğinde çalışır
+    if (editingOfferId) {// editingOfferId undefined değilse
+      const offer = offers.find(o => o.id === editingOfferId);// editingOfferId ile eşleşen teklifi bulur
+      if (offer) {// offer undefined değilse
+        setCustomerName(offer.customerName);// müşteri adını ayarlar
         setOfferName(offer.offerName);
         setOfferDate(offer.offerDate);
         setOfferStatus(offer.offerStatus);
-        // Normalize existing items to ensure computed fields are present
-        const normalizedItems = offer.items.map((it: OfferLineItem) => {
-          const quantity = typeof it.quantity === 'number' ? it.quantity : Number(it.quantity) || 0;
-          const unitPrice = typeof it.unitPrice === 'number' ? it.unitPrice : Number(it.unitPrice) || 0;
-          const discountPercent = typeof it.discountAmount === 'number' ? it.discountAmount : Number(it.discountAmount) || 0;
-          const kdv = typeof it.kdv === 'number' ? it.kdv : 0.18;
-
-          const lineTotal = quantity * unitPrice;
-          const lineDiscount = lineTotal * (discountPercent / 100);
-          const lineVat = (lineTotal - lineDiscount) * kdv;
-          const totalPrice = lineTotal - lineDiscount + lineVat;
-
-          return {
-            ...it,
-            itemId: it.itemId || uuidv4(),
-            quantity,
-            unitPrice,
-            discountAmount: discountPercent,
-            kdv,
-            lineTotal: typeof it.lineTotal === 'number' ? it.lineTotal : lineTotal,
-            lineDiscount: typeof it.lineDiscount === 'number' ? it.lineDiscount : lineDiscount,
-            lineVat: typeof it.lineVat === 'number' ? it.lineVat : lineVat,
-            totalPrice: typeof it.totalPrice === 'number' ? it.totalPrice : totalPrice,
-          };
-        });
-        setItems(normalizedItems);
+        setItems(normalizeItems(offer.items).map(it => ({ ...it, itemId: it.itemId || uuidv4() })));// teklif satırlarını normalize eder ve uuidv4 ile id'leri oluşturur
       }
-    } else {
-      // Default the date to today's local date for new offers
+    } else {// editingOfferId undefined ise
+      // yeni teklifler için tarihi bugün olarak ayarlar
       const today = new Date();
       const yyyy = today.getFullYear();
       const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');// günü ayarlar ve iki basamak halinde gösterir örneğin 9 değil 09 şeklinde
       setOfferDate(`${yyyy}-${mm}-${dd}`);
     }
-  }, [editingOfferId, offers]);
+  }, [editingOfferId, offers]);// editingOfferId ve offers değiştiğinde çalışır
 
   const handleAddItem = () => {
     if (isApproved) return;
@@ -108,7 +60,7 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
       lineVat: 0,
       totalPrice: 0
     };
-    setItems([...items, newItem]);
+    setItems([...items, newItem]);//yeni satır eklenir ve react state güncellenir tablo render edilir.
   };
 
   const handleItemChange = (index: number, field: string, value: any) => {
@@ -116,34 +68,22 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
 
-    const item = newItems[index];
-    const lineTotal = item.quantity * item.unitPrice;
-    const discountPercent = (typeof item.discountAmount === 'number' ? item.discountAmount : Number(item.discountAmount)) || 0;
-    const lineDiscount = lineTotal * (discountPercent / 100);
-    const lineVat = (lineTotal - lineDiscount) * item.kdv;
-    const totalPrice = lineTotal - lineDiscount + lineVat;
-
-    newItems[index] = {
-      ...newItems[index],
-      lineTotal,
-      lineDiscount,
-      lineVat,
-      totalPrice
-    };
+    const computed = computeLineDerived(newItems[index]);
+    newItems[index] = { ...newItems[index], ...computed };
     setItems(newItems);
   };
 
   const handleDeleteItem = (index: number) => {
     if (isApproved) return;
-    const newItems = items.filter((_, i) => i !== index);
-    setItems(newItems);
+    const newItems = items.filter((_, i) => i !== index);//silinecek satır dışındakileri seçer newItems ekler
+    setItems(newItems);// react state güncellenir tablo render edilir.
     
     // Also remove from selected items if it was selected
     const itemToDelete = items[index];
-    if (itemToDelete) {
+    if (itemToDelete) {// itemToDelete undefined değilse
       setSelectedItemIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(itemToDelete.itemId);
+        const newSet = new Set(prev);// önceki seçilenlerden yeni bir set oluşturur
+        newSet.delete(itemToDelete.itemId);// silinecek satırın itemId'sini setten siler
         return newSet;
       });
     }
@@ -196,13 +136,7 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
     setModalOpen(false);
   };
 
-  // Derived totals for live summary display (based on selection if any)
-  const hasSelection = selectedItemIds.size > 0;
-  const itemsForSummary = hasSelection ? items.filter(it => selectedItemIds.has(it.itemId)) : items;
-  const liveSubTotal = itemsForSummary.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
-  const liveDiscountTotal = itemsForSummary.reduce((sum, item) => sum + (item.lineDiscount || 0), 0);
-  const liveVatTotal = itemsForSummary.reduce((sum, item) => sum + (item.lineVat || 0), 0);
-  const liveGrandTotal = itemsForSummary.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+  const { subTotal: liveSubTotal, discountTotal: liveDiscountTotal, vatTotal: liveVatTotal, grandTotal: liveGrandTotal } = computeLiveTotals(items, selectedItemIds);
 
   // Auto-adjust status when items added/removed
   useEffect(() => {
@@ -215,220 +149,97 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
   }, [items, offerStatus]);
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h3 className="modal-title">
+    <div className="fixed inset-0 w-full h-full bg-black/50 flex justify-center items-center z-[1000]">
+      <div className="bg-white p-6 rounded-xl w-[80%] max-h-[90vh] overflow-y-auto">
+        <h3 className="text-xl font-semibold mb-4">
           {editingOfferId ? 'Teklif Düzenle' : 'Yeni Teklif Ekle'}
         </h3>
 
-        <div className="modal-form">
-          {formErrors.length > 0 && (
-            <div className="form-errors">
-              <ul>
-                {formErrors.map((err, i) => (
-                  <li key={i}>{err}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+        <div>
+          <ErrorAlert errors={formErrors} />
           <input
             type="text"
             placeholder="Müşteri Adı"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="form-input"
+            className="block w-full mb-3 px-4 py-3 border border-[#ccc] rounded-lg text-[16px] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
           />
           <input
             type="text"
             placeholder="Teklif Adı"
             value={offerName}
             onChange={(e) => setOfferName(e.target.value)}
-            className="form-input"
+            className="block w-full mb-3 px-4 py-3 border border-[#ccc] rounded-lg text-[16px] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
           />
           <input
             type="date"
             value={offerDate}
             onChange={(e) => setOfferDate(e.target.value)}
             min={new Date().toISOString().split('T')[0]}
-            className="form-input"
+            className="block w-full mb-3 px-4 py-3 border border-[#ccc] rounded-lg text-[16px] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
           />
           <select 
             value={offerStatus} 
             onChange={(e) => setOfferStatus(e.target.value as OfferStatus)} 
             disabled={isApproved}
-            className="form-input"
+            className="block w-full mb-3 px-4 py-3 border border-[#ccc] rounded-lg text-[16px] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)] disabled:bg-gray-100"
           >
             <option value="Taslak">Taslak</option>
             <option value="Onay Bekliyor">Onay Bekliyor</option>
             <option value="Onaylandı">Onaylandı</option>
           </select>
 
-          <div className="items-table">
-            <table>
+          <div>
+            <table className="w-full border-collapse table-fixed mb-4">
               <thead>
                 <tr>
-                  <th>Tür</th>
-                  <th>Ad</th>
-                  <th>Miktar</th>
-                  <th>Tutar</th>
-                  <th>İndirim</th>
-                  <th>KDV</th>
-                  <th>Toplam</th>
-                  <th>Seç</th>
-                  <th>Sil</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">Tür</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">Ad</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">Miktar</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">Tutar</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">İndirim</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">KDV</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">Toplam</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">Seç</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">Sil</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, i) => (
-                  <>
-                    <tr key={item.itemId}>
-                      <td>
-                        <select
-                          value={item.itemType}
-                          onChange={(e) => handleItemChange(i, 'itemType', e.target.value as ItemType)}
-                        >
-                          <option value="Malzeme">Malzeme</option>
-                          <option value="Hizmet">Hizmet</option>
-                        </select>
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          value={item.materialServiceName}
-                          onChange={(e) => handleItemChange(i, 'materialServiceName', e.target.value)}
-                          disabled={isApproved}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          min={1}
-                          step={1}
-                          value={getDisplayValue(i, 'quantity', item.quantity)}
-                          onChange={(e) => handleItemChange(i, 'quantity', Number(e.target.value) || 0)}
-                          onFocus={() => handleFocus(i, 'quantity')}
-                          onBlur={() => handleBlur(i, 'quantity')}
-                          disabled={isApproved}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.01}
-                          value={getDisplayValue(i, 'unitPrice', item.unitPrice)}
-                          onChange={(e) => handleItemChange(i, 'unitPrice', Number(e.target.value) || 0)}
-                          onFocus={() => handleFocus(i, 'unitPrice')}
-                          onBlur={() => handleBlur(i, 'unitPrice')}
-                          disabled={isApproved}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          step={1}
-                          placeholder="%"
-                          value={getDisplayValue(i, 'discountAmount', item.discountAmount)}
-                          onChange={(e) => handleItemChange(i, 'discountAmount', Number(e.target.value) || 0)}
-                          onFocus={() => handleFocus(i, 'discountAmount')}
-                          onBlur={() => handleBlur(i, 'discountAmount')}
-                          disabled={isApproved}
-                        />
-                      </td>
-                      <td>
-                        <select
-                          value={item.kdv}
-                          onChange={(e) => handleItemChange(i, 'kdv', Number(e.target.value) as 0.08 | 0.18 | 0.20)}
-                          disabled={isApproved}
-                        >
-                          <option value={0.08}>8%</option>
-                          <option value={0.18}>18%</option>
-                          <option value={0.20}>20%</option>
-                        </select>
-                      </td>
-                      <td>{(item.totalPrice ?? 0).toFixed(2)}</td>
-                      <td>
-                        <button
-                          className={`select-btn${selectedItemIds.has(item.itemId) ? ' selected' : ''}`}
-                          onClick={() => {
-                            setSelectedItemIds(prev => {
-                              const next = new Set(prev);
-                              if (next.has(item.itemId)) {
-                                next.delete(item.itemId);
-                              } else {
-                                next.add(item.itemId);
-                              }
-                              return next;
-                            });
-                          }}
-                          type="button"
-                        >
-                          {selectedItemIds.has(item.itemId) ? 'Seçildi' : 'Seç'}
-                        </button>
-                      </td>
-                      <td>
-                        <button
-                          className="delete-btn"
-                          onClick={() => handleDeleteItem(i)}
-                          disabled={isApproved}
-                          type="button"
-                          title="Satırı Sil"
-                        >
-                          ×
-                        </button>
-                      </td>
-                    </tr>
-                    <tr key={`${item.itemId}-summary`} className="item-summary-row">
-                      <td colSpan={9}>
-                        <div className="item-summary">
-                          <span>
-                            Ara Toplam: <strong>{(item.lineTotal ?? 0).toFixed(2)} ₺</strong>
-                          </span>
-                          <span>
-                            İndirim ({(item.discountAmount ?? 0).toFixed(0)}%): <strong>{(item.lineDiscount ?? 0).toFixed(2)} ₺</strong>
-                          </span>
-                          <span>
-                            KDV: <strong>{(item.lineVat ?? 0).toFixed(2)} ₺</strong>
-                          </span>
-                          <span>
-                            Toplam: <strong>{(item.totalPrice ?? 0).toFixed(2)} ₺</strong>
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  </>
+                  <ItemRow
+                    key={item.itemId}
+                    item={item}
+                    index={i}
+                    isApproved={isApproved}
+                    selected={selectedItemIds.has(item.itemId)}
+                    onChange={handleItemChange}
+                    onToggleSelect={(id) => {
+                      setSelectedItemIds(prev => {
+                        const next = new Set(prev);
+                        if (next.has(id)) next.delete(id); else next.add(id);
+                        return next;
+                      });
+                    }}
+                    onDelete={handleDeleteItem}
+                  />
                 ))}
               </tbody>
             </table>
 
-            <button onClick={handleAddItem} className="add-row-btn">
+            <button onClick={handleAddItem} className="bg-blue-500 text-white px-3 py-2 rounded-md">
               + Satır Ekle
             </button>
 
-            <div className="totals-summary">
-              <div className="totals-row">
-                <span>Ara Toplam:</span>
-                <strong>{liveSubTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</strong>
-              </div>
-              <div className="totals-row">
-                <span>İndirim Toplamı:</span>
-                <strong>{liveDiscountTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</strong>
-              </div>
-              <div className="totals-row">
-                <span>KDV Toplamı:</span>
-                <strong>{liveVatTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</strong>
-              </div>
-              <div className="totals-row grand">
-                <span>Genel Toplam:</span>
-                <strong>{liveGrandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</strong>
-              </div>
-            </div>
+            <TotalsSummary
+              subTotal={liveSubTotal}
+              discountTotal={liveDiscountTotal}
+              vatTotal={liveVatTotal}
+              grandTotal={liveGrandTotal}
+            />
           </div>
 
-          <div className="modal-actions">
-            <button onClick={handleSave} className="save-btn">Kaydet</button>
+          <div className="flex justify-end gap-2">
+            <button onClick={handleSave} className="bg-emerald-500 text-white px-4 py-2 rounded-md">Kaydet</button>
             {editingOfferId && (
               <button
                 onClick={() => {
@@ -437,12 +248,12 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
                     setModalOpen(false);
                   }
                 }}
-                className="cancel-btn"
+                className="bg-red-500 text-white px-4 py-2 rounded-md"
               >
                 Sil
               </button>
             )}
-            <button onClick={() => setModalOpen(false)} className="cancel-btn">Kapat</button>
+            <button onClick={() => setModalOpen(false)} className="bg-red-500 text-white px-4 py-2 rounded-md">Kapat</button>
           </div>
         </div>
       </div>
