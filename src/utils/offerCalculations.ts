@@ -5,11 +5,16 @@ export type ComputedLine = Pick<OfferLineItem, 'lineTotal' | 'lineDiscount' | 'l
 export function computeLineDerived(item: OfferLineItem): ComputedLine {// item objesinin tüm özelliklerini ComputedLine objesine kopyalar
   const quantity = Number(item.quantity) || 0;
   const unitPrice = Number(item.unitPrice) || 0;
-  const discountPercent = Number(item.discountAmount) || 0;
+  //const discountPercent = Number(item.discountAmount) || 0;
   const kdv = typeof item.kdv === 'number' ? item.kdv : 0.18;
+  const discountPercent = Number(item.discountPercentage) || 0;
+ const discountUnit = Number(item.discountUnit) || 0;
 
+  // yüzde ve birim indirimi birlikte uygulamak için
+  
   const lineTotal = quantity * unitPrice;
-  const lineDiscount = lineTotal * (discountPercent / 100);
+  const lineDiscount = lineTotal * (discountPercent / 100) + discountUnit ;
+//const lineDiscount = lineTotal * (discountPercent / 100);
   const lineVat = (lineTotal - lineDiscount) * kdv;
   const totalPrice = lineTotal - lineDiscount + lineVat;
 

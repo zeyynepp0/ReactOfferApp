@@ -32,7 +32,7 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
         setCustomerName(offer.customerName);// müşteri adını ayarlar
         setOfferName(offer.offerName);
         setOfferDate(offer.offerDate);
-        setOfferStatus(offer.offerStatus);
+        setOfferStatus(offer.offerStatus as OfferStatus);// teklif durumunu ayarlar
         setItems(normalizeItems(offer.items).map(it => ({ ...it, itemId: it.itemId || uuidv4() })));// teklif satırlarını normalize eder ve uuidv4 ile id'leri oluşturur
       }
     } else {// editingOfferId undefined ise
@@ -45,35 +45,38 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
     }
   }, [editingOfferId, offers]);// editingOfferId ve offers değiştiğinde çalışır
 
-  const handleAddItem = () => {
-    if (isApproved) return;
-    const newItem: OfferLineItem = {
+  const handleAddItem = () => {// yeni satır ekleme fonksiyonu
+    if (isApproved) return;// onaylandıysa yeni satır eklenemez
+    const newItem: OfferLineItem = {// yeni satır oluşturur
       itemId: uuidv4(),
       itemType: 'Malzeme',
       materialServiceName: '',
       quantity: 1,
       unitPrice: 0,
       discountAmount: 0,
+      discountUnit: 0,
+      discountPercentage: 0,
       kdv: 0.18,
       lineTotal: 0,
       lineDiscount: 0,
       lineVat: 0,
-      totalPrice: 0
+      totalPrice: 0,
+      isActiveLine: true
     };
     setItems([...items, newItem]);//yeni satır eklenir ve react state güncellenir tablo render edilir.
   };
 
-  const handleItemChange = (index: number, field: string, value: any) => {
-    if (isApproved) return;
-    const newItems = [...items];
-    newItems[index] = { ...newItems[index], [field]: value };
+  const handleItemChange = (index: number, field: string, value: any) => {// satır değişikliği fonksiyonu
+    if (isApproved) return;// onaylandıysa satır değiştirilemez
+    const newItems = [...items];// mevcut satırları kopyalar
+    newItems[index] = { ...newItems[index], [field]: value };// belirtilen index'teki satırın belirtilen alanını günceller
 
-    const computed = computeLineDerived(newItems[index]);
-    newItems[index] = { ...newItems[index], ...computed };
-    setItems(newItems);
+    const computed = computeLineDerived(newItems[index]);// satırın türetilmiş değerlerini hesaplar
+    newItems[index] = { ...newItems[index], ...computed };// satırın türetilmiş değerlerini satıra ekler
+    setItems(newItems);// react state güncellenir tablo render edilir.
   };
 
-  const handleDeleteItem = (index: number) => {
+  /* const handleDeleteItem = (index: number) => {
     if (isApproved) return;
     const newItems = items.filter((_, i) => i !== index);//silinecek satır dışındakileri seçer newItems ekler
     setItems(newItems);// react state güncellenir tablo render edilir.
@@ -87,7 +90,7 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
         return newSet;
       });
     }
-  };
+  }; */
 
   const handleSave = () => {
     // Validate
@@ -110,7 +113,7 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
     setFormErrors([]);
 
     // Calculate totals
-    const subTotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+    const subTotal = items.reduce((sum, item) => sum + item.lineTotal, 0); 
     const discountTotal = items.reduce((sum, item) => sum + item.lineDiscount, 0);
     const vatTotal = items.reduce((sum, item) => sum + item.lineVat, 0);
     const grandTotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -126,19 +129,20 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
       discountTotal,
       vatTotal,
       grandTotal,
+      isActive: true,
     };
 
-    if (editingOfferId) {
+    if (editingOfferId) {// düzenleme modundaysa
       dispatch(updateOffer(newOffer));
     } else {
-      dispatch(addOffer(newOffer));
+      dispatch(addOffer(newOffer));// yeni teklif eklenir
     }
     setModalOpen(false);
   };
 
   const { subTotal: liveSubTotal, discountTotal: liveDiscountTotal, vatTotal: liveVatTotal, grandTotal: liveGrandTotal } = computeLiveTotals(items, selectedItemIds);
 
-  // Auto-adjust status when items added/removed
+  
   useEffect(() => {
     if (items.length === 0 && offerStatus !== 'Taslak') {
       setOfferStatus('Taslak');
@@ -157,6 +161,10 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
 
         <div>
           <ErrorAlert errors={formErrors} />
+          
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Müşteri Adı
+          </label>
           <input
             type="text"
             placeholder="Müşteri Adı"
@@ -164,6 +172,10 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
             onChange={(e) => setCustomerName(e.target.value)}
             className="block w-full mb-3 px-4 py-3 border border-[#ccc] rounded-lg text-[16px] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
           />
+
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+           Teklif Adı
+          </label>
           <input
             type="text"
             placeholder="Teklif Adı"
@@ -171,13 +183,19 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
             onChange={(e) => setOfferName(e.target.value)}
             className="block w-full mb-3 px-4 py-3 border border-[#ccc] rounded-lg text-[16px] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
           />
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Tarih
+          </label>
           <input
             type="date"
             value={offerDate}
             onChange={(e) => setOfferDate(e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
+            //min={new Date().toISOString().split('T')[0]}// geçmiş tarih seçilmesini engeller
             className="block w-full mb-3 px-4 py-3 border border-[#ccc] rounded-lg text-[16px] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
           />
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Teklif Durumu
+          </label>
           <select 
             value={offerStatus} 
             onChange={(e) => setOfferStatus(e.target.value as OfferStatus)} 
@@ -197,22 +215,26 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
                   <th className="border border-slate-200 p-2 bg-slate-50">Ad</th>
                   <th className="border border-slate-200 p-2 bg-slate-50">Miktar</th>
                   <th className="border border-slate-200 p-2 bg-slate-50">Tutar</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">İndirim</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">Ara Toplam (₺)</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">İndirim (%)</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">İndirim (Birim)</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">İndirim Toplamı(₺)</th>
                   <th className="border border-slate-200 p-2 bg-slate-50">KDV</th>
+                  <th className="border border-slate-200 p-2 bg-slate-50">KDV Toplamı</th>
                   <th className="border border-slate-200 p-2 bg-slate-50">Toplam</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">Seç</th>
+                  {/* <th className="border border-slate-200 p-2 bg-slate-50">Seç</th> */}
                   <th className="border border-slate-200 p-2 bg-slate-50">Sil</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, i) => (
-                  <ItemRow
+                  <ItemRow 
                     key={item.itemId}
                     item={item}
                     index={i}
                     isApproved={isApproved}
-                    selected={selectedItemIds.has(item.itemId)}
-                    onChange={handleItemChange}
+                    selected={selectedItemIds.has(item.itemId)}/* item seçili mi kontrolü */
+                    /* onChange={handleItemChange}
                     onToggleSelect={(id) => {
                       setSelectedItemIds(prev => {
                         const next = new Set(prev);
@@ -220,7 +242,7 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
                         return next;
                       });
                     }}
-                    onDelete={handleDeleteItem}
+                    onDelete={handleDeleteItem}// satır silme işlevi prop olarak geçirilir */
                   />
                 ))}
               </tbody>
@@ -243,10 +265,10 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
             {editingOfferId && (
               <button
                 onClick={() => {
-                  if (editingOfferId) {
-                    dispatch(deleteOffer(editingOfferId));
+                  /* if (editingOfferId) {
+                    dispatch(deleteOffer(editingOfferId));// teklif silinir
                     setModalOpen(false);
-                  }
+                  } */
                 }}
                 className="bg-red-500 text-white px-4 py-2 rounded-md"
               >

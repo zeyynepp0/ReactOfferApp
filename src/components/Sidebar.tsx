@@ -35,7 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, onLogout, onNewOffe
     <>
       {/* Aç/Kapat düğmesi */}
       <button 
-        className={`${isOpen ? 'left-[260px] opacity-0 invisible' : 'left-5'} fixed top-5 z-[1001] bg-[#1e293b] text-white border-0 p-[10px] rounded-lg cursor-pointer text-[18px] transition-all shadow-[0_2px_4px_rgba(0,0,0,0.1)] hover:bg-[#334155]`}
+        className={`${isOpen ? 'left-[260px] opacity-0 invisible' : 'left-5'} fixed top-3 z-[1001] bg-[#1e293b] text-white border-0 p-[10px] rounded-lg cursor-pointer text-[18px] transition-all shadow-[0_2px_4px_rgba(0,0,0,0.1)] hover:bg-[#334155]`}
         onClick={onToggle}
       >
         ☰

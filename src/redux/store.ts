@@ -3,6 +3,7 @@ import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import offersReducer from './offersSlice';
 import authReducer from './authSlice';
+import type { OfferLineItem } from './offersSlice';
 
 import { combineReducers } from 'redux';
 
@@ -34,11 +35,22 @@ export const store = configureStore({
 // Persistor: store'u disk ile senkronize eder
 export const persistor = persistStore(store);
 
+// OfferStatus tipini tanımlayın veya uygun yerden içe aktarın
+export type OfferStatus = 'Taslak' | 'Onay Bekliyor' | 'Onaylandı';
+
 // Root state type - manually defined to avoid persistence issues
 // Root state tipi: sayfalarda useSelector ile tip güvenli erişim sağlar
 export interface RootState {
   offers: {
-    offers: any[];
+    offers: { id: string; customerName: string ;
+      offerName: string;
+      offerDate: string;
+      offerStatus: OfferStatus;
+      items: OfferLineItem[];
+      subTotal: number; 
+      discountTotal: number; 
+      vatTotal: number; 
+      grandTotal: number;  }[];
     loading: boolean;
     error: string | null;
   };

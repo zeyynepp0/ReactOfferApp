@@ -20,7 +20,9 @@ export interface OfferItem {
   subTotal: number; 
   discountTotal: number; 
   vatTotal: number; 
-  grandTotal: number; 
+  grandTotal: number;
+
+  isActive: boolean; 
 }
 
 // Teklif satır yapısı
@@ -31,12 +33,16 @@ export interface OfferLineItem {
   quantity: number;
   unitPrice: number;
   discountAmount: number;
+  discountUnit: number
+  discountPercentage: number;
   kdv: KDV;
 
   lineTotal: number; 
   lineDiscount: number; 
   lineVat: number; 
   totalPrice: number;
+
+  isActiveLine: boolean; 
 }
 
 // Slice state

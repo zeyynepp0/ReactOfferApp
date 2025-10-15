@@ -1,4 +1,5 @@
 import type { ItemType, OfferLineItem } from '../../redux/offersSlice';
+import React, { useState } from 'react';
 
 interface ItemRowProps {
   item: OfferLineItem;
@@ -7,10 +8,12 @@ interface ItemRowProps {
   selected: boolean;
   onChange: (index: number, field: string, value: any) => void;
   onToggleSelect: (itemId: string) => void;
-  onDelete: (index: number) => void;
+  onDelete: (index: number) => void;// satır silme işlevi için yeni prop
 }
+//const [discountUnit , setDiscountUnit] = useState('');
+//const [discountPercentage , setDiscountPercentage] = useState('');
 
-export default function ItemRow({ item, index, isApproved, selected, onChange, onToggleSelect, onDelete }: ItemRowProps) {
+export default function ItemRow({ item, index, isApproved, onChange, onDelete }: ItemRowProps) { 
   return (
     <>
       <tr>
@@ -24,6 +27,7 @@ export default function ItemRow({ item, index, isApproved, selected, onChange, o
             <option value="Hizmet">Hizmet</option>
           </select>
         </td>
+
         <td className="border border-slate-200 p-2 text-center align-middle overflow-hidden text-ellipsis">
           <input
             type="text"
@@ -45,6 +49,8 @@ export default function ItemRow({ item, index, isApproved, selected, onChange, o
             className="w-full"
           />
         </td>
+
+        
         <td className="border border-slate-200 p-2 text-center align-middle overflow-hidden text-ellipsis">
           <input
             type="number"
@@ -57,6 +63,19 @@ export default function ItemRow({ item, index, isApproved, selected, onChange, o
             className="w-full"
           />
         </td>
+
+        <td className="border border-slate-200 p-2 text-center align-middle overflow-hidden text-ellipsis">
+          <input
+            type="number" 
+            value={item.lineTotal === 0 ? '' : item.lineTotal}
+            onChange={(e) => onChange(index, 'lineTotal', e.target.value === '' ? 0 : Number(e.target.value))}
+            disabled={isApproved}
+            className="w-full"
+          />
+        </td>
+       
+        
+        {/* indirimi yüzde için giren  */}
         <td className="border border-slate-200 p-2 text-center align-middle overflow-hidden text-ellipsis">
           <input
             type="number"
@@ -64,12 +83,30 @@ export default function ItemRow({ item, index, isApproved, selected, onChange, o
             max={100}
             step={1}
             placeholder="0"
-            value={item.discountAmount === 0 ? '' : item.discountAmount}
-            onChange={(e) => onChange(index, 'discountAmount', e.target.value === '' ? 0 : Number(e.target.value))}
+            value={item.discountPercentage === 0 ? '' : item.discountPercentage}
+            onChange={(e) => onChange(index, 'discountPercentage', e.target.value === '' ? 0 : Number(e.target.value))}
             disabled={isApproved}
             className="w-full"
           />
         </td>
+
+        {/* inidirmi birim olsrsk giren için  */}
+        <td className="border border-slate-200 p-2 text-center align-middle overflow-hidden text-ellipsis">
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={1}
+            placeholder="0"
+            value={item.discountUnit === 0 ? '' : item.discountUnit}
+            onChange={(e) => onChange(index, 'discountUnit', e.target.value === '' ? 0 : Number(e.target.value))}
+            disabled={isApproved}
+            className="w-full"
+          />
+        </td>
+        
+        <td className="border border-slate-200 p-2 text-center align-middle overflow-hidden text-ellipsis">{(item.lineDiscount ?? 0).toFixed(2)}</td>
+
         <td className="border border-slate-200 p-2 text-center align-middle overflow-hidden text-ellipsis">
           <select
             value={item.kdv}
@@ -82,16 +119,9 @@ export default function ItemRow({ item, index, isApproved, selected, onChange, o
             <option value={0.20}>20%</option>
           </select>
         </td>
+        <td className="border border-slate-200 p-2 text-center align-middle overflow-hidden text-ellipsis">{(item.lineVat ?? 0).toFixed(2)}</td>
         <td className="border border-slate-200 p-2 text-center align-middle overflow-hidden text-ellipsis">{(item.totalPrice ?? 0).toFixed(2)}</td>
-        <td className="border border-slate-200 p-2 text-center align-middle overflow-hidden text-ellipsis">
-          <button
-            className={`px-2.5 py-1 rounded-md text-white ${selected ? 'bg-slate-900' : 'bg-slate-500'}`}
-            onClick={() => onToggleSelect(item.itemId)}
-            type="button"
-          >
-            {selected ? 'Seçildi' : 'Seç'}
-          </button>
-        </td>
+       
         <td className="border border-slate-200 p-2 text-center align-middle overflow-hidden text-ellipsis">
           <button
             className="bg-red-500 text-white border-0 px-2.5 py-1 rounded-md cursor-pointer text-[16px] font-bold min-w-8 h-8 flex items-center justify-center hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
@@ -104,7 +134,7 @@ export default function ItemRow({ item, index, isApproved, selected, onChange, o
           </button>
         </td>
       </tr>
-      <tr>
+      {/* <tr>
         <td colSpan={9} className="bg-[#fcfcfd]">
           <div className="flex gap-4 justify-end">
             <span>
@@ -121,7 +151,7 @@ export default function ItemRow({ item, index, isApproved, selected, onChange, o
             </span>
           </div>
         </td>
-      </tr>
+      </tr> */}
     </>
   );
 }
