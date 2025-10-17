@@ -1,7 +1,7 @@
 // Uygulama yönlendirmeleri
-import  LoginPage  from "./pages/LoginPage"
-import  OffersPage  from "./pages/OffersPage"
-import ProtectedRoute from "./components/ProtectedRoute"
+import LoginPage from "./pages/LoginPage";
+import OffersPage from "./pages/OffersPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 function App() {
@@ -17,14 +17,9 @@ function App() {
             </ProtectedRoute>
           } 
         />
-        <Route 
-          
-          
-        />
-        
       </Routes>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;

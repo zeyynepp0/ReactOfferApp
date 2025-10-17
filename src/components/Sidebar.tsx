@@ -1,8 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { logout } from '../redux/authSlice';
-// Tailwind used instead of CSS file
+import { useAuth } from '../hooks/useAuth';
 
 // Sidebar bileşeni: gezinme, yeni teklif açma ve çıkış işlemlerini içerir
 interface SidebarProps {
@@ -14,7 +12,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, onLogout, onNewOffer }) => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const { logoutUser } = useAuth();
 
   // Belirtilen sayfaya git ve menüyü kapat
   const handleNavigate = (path: string) => {
@@ -24,7 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, onLogout, onNewOffe
 
   // Çıkış işlemi: redux + localStorage temizliği ve giriş sayfasına yönlendirme
   const handleLogout = () => {
-    dispatch(logout());
+    logoutUser();
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/');

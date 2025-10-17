@@ -1,14 +1,13 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../redux/store';
 import { Table } from './Table';
 import type { ColumnDef } from './Table';
-
+import { useOffers } from '../hooks/useOffers';
 
 interface OfferTableProps {
   setModalOpen: (value: boolean) => void;
   setEditingOfferId: (id: string | null) => void;
 }
+
 interface Offer {
   id: string;
   customerName: string;
@@ -16,16 +15,16 @@ interface Offer {
   offerStatus: 'Taslak' | 'Onay Bekliyor' | 'Onaylandı'; 
   offerDate: string;
   grandTotal: number;
+  isActive: boolean;
 }
 
 const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId }) => {
-  // Global store'dan teklifleri al
-  const offers = useSelector((state: RootState) => state.offers.offers);
+  const { activeOffers, softDeleteOffer } = useOffers();
 
-   const columns: ColumnDef<Offer>[] = [
+  const columns: ColumnDef<Offer>[] = [
     {
       header: 'Teklif No',
-      fieldKey: (row, index) => index + 1 // satır numarasını göstermek için kullanılır. row.id değil, index + 1 kullanılır çünkü index sıfırdan başlar.
+      fieldKey: (_, index) => index + 1
     },
     {
       header: 'Müşteri Adı',
@@ -37,7 +36,6 @@ const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId
     },
     {
       header: 'Durum',
-      
       fieldKey: (row) => (
         <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${
             row.offerStatus === 'Taslak'
@@ -58,6 +56,34 @@ const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId
       header: 'Toplam Tutar',
       fieldKey: 'grandTotal', 
     },
+    {
+      header: 'İşlemler',
+      fieldKey: (row) => (
+        <div className="flex gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingOfferId(row.id);
+              setModalOpen(true);
+            }}
+            className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+          >
+            Düzenle
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.confirm('Bu teklifi silmek istediğinizden emin misiniz?')) {
+                softDeleteOffer(row.id);
+              }
+            }}
+            className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+          >
+            Sil
+          </button>
+        </div>
+      ),
+    },
   ];
 
   const handleRowClick = (offer: Offer) => {
@@ -66,16 +92,12 @@ const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId
   };
 
   return (
-
     <Table<Offer>
-          columns={columns}
-          data={offers}
-          onRowClick={handleRowClick}
-          emptyDataText="Henüz teklif bulunmuyor."
+      columns={columns}
+      data={activeOffers}
+      onRowClick={handleRowClick}
+      emptyDataText="Henüz teklif bulunmuyor."
     />
-
-
-  
   );
 };
 

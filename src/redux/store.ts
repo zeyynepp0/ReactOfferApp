@@ -50,7 +50,8 @@ export interface RootState {
       subTotal: number; 
       discountTotal: number; 
       vatTotal: number; 
-      grandTotal: number;  }[];
+      grandTotal: number;
+      isActive: boolean;  }[];
     loading: boolean;
     error: string | null;
   };

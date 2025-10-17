@@ -1,5 +1,4 @@
 import type { ItemType, OfferLineItem } from '../../redux/offersSlice';
-import React, { useState } from 'react';
 
 interface ItemRowProps {
   item: OfferLineItem;

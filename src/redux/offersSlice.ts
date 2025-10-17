@@ -8,6 +8,12 @@ export type KDV = 0.08 | 0.18 | 0.20;
 export type OfferStatus = 'Taslak' | 'Onay Bekliyor' | 'Onaylandı';
 export type ItemType = 'Malzeme' | 'Hizmet';
 
+// DeleteLinePayload tipi
+export interface DeleteLinePayload {
+  offerId: string;
+  itemId: string;
+}
+
 // Teklif üst bilgileri ve toplamlar
 export interface OfferItem {
   id: string;
@@ -65,11 +71,30 @@ const offersSlice = createSlice({
       const index = state.offers.findIndex(o => o.id === action.payload.id);
       if (index >= 0) state.offers[index] = action.payload;
     },
-    deleteOffer(state, action: PayloadAction<string>) {
+    /* deleteOffer(state, action: PayloadAction<string>) {
       state.offers = state.offers.filter(o => o.id !== action.payload);
+    }, */
+
+    deleteOffer(state, action: PayloadAction<string>) {// PayloadAction içindeki string, silinecek teklifin ID'sini temsil eder
+      const offerIdToDelete = action.payload;
+      const offer = state.offers.find(o => o.id === offerIdToDelete);
+      if (offer) {
+        offer.isActive = false;
+      }
+    },
+    deleteOfferLine(state, action: PayloadAction<DeleteLinePayload>) {
+      const { offerId, itemId } = action.payload;
+      const offer = state.offers.find(o => o.id === offerId);
+
+      if (offer) {
+        const lineItem = offer.items.find(item => item.itemId === itemId);
+        if (lineItem) {
+          lineItem.isActiveLine = false;
+        }
+      }
     },
   },
 });
 
-export const { addOffer, updateOffer, deleteOffer } = offersSlice.actions;
+export const { addOffer, updateOffer, deleteOffer,deleteOfferLine } = offersSlice.actions;
 export default offersSlice.reducer;
