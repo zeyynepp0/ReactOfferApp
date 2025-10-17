@@ -41,14 +41,14 @@ export const useOfferForm = (editingOfferId: string | null, offers: any[]) => {
   }, [editingOfferId, offers]);
 
   
-  useEffect(() => {
+/*   useEffect(() => {
     if (items.length === 0 && offerStatus !== 'Taslak') {
       setOfferStatus('Taslak');
     }
     if (items.length > 0 && offerStatus === 'Taslak') {
       setOfferStatus('Onay Bekliyor');
     }
-  }, [items, offerStatus]);
+  }, [items, offerStatus]); */
 
   const addItem = useCallback(() => {
     if (isApproved) return;

@@ -18,8 +18,8 @@ export const useValidation = (options: UseValidationOptions = {}) => {
       return { success: true, data: result.data };
     } else {
       const formattedErrors = result.error.issues.map((error: any) => {
-        const path = error.path.join('.');
-        return path ? `${path}: ${error.message}` : error.message;
+  
+      return error.message;
       });
       setErrors(formattedErrors);
       return { success: false, errors: formattedErrors };

@@ -1,16 +1,16 @@
 import { useState, type ReactNode } from 'react'
 
-type ColumnType<T> = {
+type ColumnType<T> = {// generic type tanımı 
     header: ReactNode,
     fieldKey: keyof T;
 
 }
 
-type MyTableProps<T> = {
+type MyTableProps<T> = {// generic prop tanımı. 
     columns: ColumnType<T>[],
     data?: T[]
     emptyDataText?: string;
-    onRowClick?: (data: T) => void;
+    onRowClick?: (data: T) => void;//  satır tıklama fonksiyonu
 }
 
 const MyTable = <T,>({ columns, data, emptyDataText, onRowClick }: MyTableProps<T>) => {// generic component tanımı

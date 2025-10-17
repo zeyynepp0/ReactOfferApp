@@ -16,7 +16,7 @@ interface OfferModalProps {
 
 const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId }) => {
   const { offers, addNewOffer, updateExistingOffer, softDeleteOffer, softDeleteOfferLine } = useOffers();
-  const { errors, validate, clearErrors } = useValidation({ autoCloseDelay: 7000 });
+  const { errors, validate, clearErrors, setCustomErrors } = useValidation({ autoCloseDelay: 7000 });
   
   const {// useOfferForm'dan gerekli state ve fonksiyonları alıyoruz
     customerName,
@@ -40,6 +40,16 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
     toggleItemSelection,
     calculateTotals,
   } = useOfferForm(editingOfferId, offers);// editingOfferId ve offers'ı useOfferForm'a geçiriyoruz
+
+
+  const originalOffer = offers.find(o => o.id === editingOfferId);
+  const isOriginallyApproved = originalOffer?.offerStatus === 'Onaylandı';
+
+  
+  const showApprovedError = () => {
+    setCustomErrors(['Onaylanmış teklifler değiştirilemez.']);
+  };
+
 
   const handleSave = () => {
     clearErrors();
@@ -97,14 +107,16 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
 
   const handleDeleteItem = (index: number) => {
     if (isApproved) return;
-    const itemToDelete = items[index];
-    if (itemToDelete && editingOfferId) {
-      softDeleteOfferLine({ 
-        offerId: editingOfferId, 
-        itemId: itemToDelete.itemId 
-      });
+    if (window.confirm('Bu kalemi silmek istediğinizden emin misiniz?')) {
+      const itemToDelete = items[index];
+      if (itemToDelete && editingOfferId) {
+        softDeleteOfferLine({ 
+          offerId: editingOfferId, 
+          itemId: itemToDelete.itemId 
+        });
+      }
+      deleteItem(index);
     }
-    deleteItem(index);
   };
 
   return (
@@ -210,8 +222,13 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
           <div className="flex justify-end gap-2">
             <button onClick={handleSave} className="bg-emerald-500 text-white px-4 py-2 rounded-md">Kaydet</button>
             {editingOfferId && (
-              <button
-                onClick={handleDeleteOffer}
+             <button
+                onClick={() => {
+                  if (window.confirm('Bu teklifi silmek istediğinizden emin misiniz?')) {
+                    softDeleteOffer(editingOfferId);
+                    //setModalOpen(false); // Modalı kapat
+                  }
+                }}
                 className="bg-red-500 text-white px-4 py-2 rounded-md"
               >
                 Sil

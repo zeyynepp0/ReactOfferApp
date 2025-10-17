@@ -64,7 +64,7 @@ const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId
             onClick={(e) => {
               e.stopPropagation();
               setEditingOfferId(row.id);
-              setModalOpen(true);
+              //setModalOpen(true);
             }}
             className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
           >
@@ -88,7 +88,7 @@ const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId
 
   const handleRowClick = (offer: Offer) => {
     setEditingOfferId(offer.id);
-    setModalOpen(true);
+    //setModalOpen(true);
   };
 
   return (
