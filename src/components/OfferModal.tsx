@@ -18,7 +18,7 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
   const { offers, addNewOffer, updateExistingOffer, softDeleteOffer, softDeleteOfferLine } = useOffers();
   const { errors, validate, clearErrors } = useValidation({ autoCloseDelay: 7000 });
   
-  const {
+  const {// useOfferForm'dan gerekli state ve fonksiyonları alıyoruz
     customerName,
     setCustomerName,
     offerName,
@@ -39,14 +39,14 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
     deleteItem,
     toggleItemSelection,
     calculateTotals,
-  } = useOfferForm(editingOfferId, offers);
+  } = useOfferForm(editingOfferId, offers);// editingOfferId ve offers'ı useOfferForm'a geçiriyoruz
 
   const handleSave = () => {
     clearErrors();
 
-    const { subTotal, discountTotal, vatTotal, grandTotal } = calculateTotals();
+    const { subTotal, discountTotal, vatTotal, grandTotal } = calculateTotals();// Güncel toplamları hesapla
 
-    const offerData: OfferFormData = {
+    const offerData: OfferFormData = {// Teklif verilerini oluşturuyoruz 
       id: editingOfferId ?? uuidv4(),
       customerName,
       offerName,
@@ -58,7 +58,7 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
       vatTotal,
       grandTotal,
       isActive: true,
-    };
+    };// Teklif verilerini oluşturuyoruz
 
     const validation = validate(offerSchema, offerData);
     
@@ -78,9 +78,9 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
       vatTotal,
       grandTotal,
       isActive: true,
-    };
+    };// Yeni teklifi oluştur
 
-    if (editingOfferId) {
+    if (editingOfferId) {// Eğer düzenleme modundaysa mevcut teklifi güncelle
       updateExistingOffer(newOffer);
     } else {
       addNewOffer(newOffer);

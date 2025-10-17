@@ -7,7 +7,7 @@ import { useModal } from '../hooks/useModal';
 
 const OffersPage: React.FC = () => {
   const { isOpen: sidebarOpen, toggleSidebar } = useSidebar();
-  const { isOpen: modalOpen, editingId: editingOfferId, openForCreate, closeModal } = useModal();
+  const { isOpen: modalOpen, editingId: editingOfferId, openForCreate, openForEdit, closeModal } = useModal();
 
   return (
     <div className="flex h-screen w-screen bg-[linear-gradient(135deg,#aabed3,#fed6e3)] relative">
@@ -31,7 +31,7 @@ const OffersPage: React.FC = () => {
 
         <OfferTable 
           setModalOpen={(open) => open ? openForCreate() : closeModal()} 
-          setEditingOfferId={(id) => id ? openForCreate() : closeModal()} 
+          setEditingOfferId={(id) => id ? openForEdit(id) : closeModal()} 
         />
 
         {modalOpen && (

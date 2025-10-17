@@ -28,6 +28,8 @@ export const useOfferForm = (editingOfferId: string | null, offers: any[]) => {
           itemId: it.itemId || uuidv4() 
         })));
       }
+      console.log("Editing Offer ID:", editingOfferId);
+
     } else {
       
       const today = new Date();
