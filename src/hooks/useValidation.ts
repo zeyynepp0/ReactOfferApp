@@ -6,18 +6,19 @@ interface UseValidationOptions {
   autoCloseDelay?: number;
 }
 
-export const useValidation = (options: UseValidationOptions = {}) => {
-  const { autoClose = true, autoCloseDelay = 5000 } = options;
-  const [errors, setErrors] = useState<string[]>([]);
+export const useValidation = (options: UseValidationOptions = {}) => {// validation işlemleri için custom hook
+  const { autoClose = true, autoCloseDelay = 50 } = options;// otomatik kapanma seçenekleri
+  const [errors, setErrors] = useState<string[]>([]);// hata mesajları state'i
 
+  // validation fonksiyonu. Tüm zod şemaları için kullanılabilir. zod kütüphanesini kullanır ve bu kütüphanede tanımlı tüm doğrulama kurallarını destekler
   const validate = useCallback(<T>(schema: z.ZodSchema<T>, data: unknown): { success: boolean; data?: T; errors?: string[] } => {
-    const result = schema.safeParse(data);
+    const result = schema.safeParse(data);// veriyi şemaya göre doğrula
     
     if (result.success) {
       setErrors([]);
-      return { success: true, data: result.data };
+      return { success: true, data: result.data };// doğrulama başarılıysa veriyi döndür
     } else {
-      const formattedErrors = result.error.issues.map((error: any) => {
+      const formattedErrors = result.error.issues.map((error: any) => {// hata mesajlarını formatla
   
       return error.message;
       });

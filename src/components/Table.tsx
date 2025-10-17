@@ -49,7 +49,7 @@ export function Table<T extends { id: string | number }>({ columns, data = [], e
             const timer = setTimeout(() => {//bir tane zamanlayıcı kuruluyor.   
                 console.warn(`FİLTRELEME TETİKLENDİ! Arama terimi: "${inputValue}"`);  
                 setSearchTerm(inputValue);
-            }, 500); 
+            }, 500); // 500ms gecikme ile çalışır her input değişiminden sonra süre tekrar baştan başlar
  
             return () => {
                 clearTimeout(timer);// Temizleme fonksiyonu: Bu fonksiyon, inputValue her değiştiğinde bir sonraki

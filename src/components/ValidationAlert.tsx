@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
+//hata mesajlarını ekranda göstermek için var
 interface ValidationAlertProps {
   errors: string[];
   onClose?: () => void;

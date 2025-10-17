@@ -64,7 +64,7 @@ const offersSlice = createSlice({
   name: 'offers',
   initialState,
   reducers: {
-    addOffer(state, action: PayloadAction<OfferItem>) {
+    addOffer(state, action: PayloadAction<OfferItem>) {// yeni teklif ekleme işlemi
       state.offers.push(action.payload);
     },
     updateOffer(state, action: PayloadAction<OfferItem>) {
@@ -83,13 +83,13 @@ const offersSlice = createSlice({
       }
     },
     deleteOfferLine(state, action: PayloadAction<DeleteLinePayload>) {
-      const { offerId, itemId } = action.payload;
-      const offer = state.offers.find(o => o.id === offerId);
+      const { offerId, itemId } = action.payload;// Silinecek teklif satırının teklif ID'si ve satır ID'si
+      const offer = state.offers.find(o => o.id === offerId);// İlgili teklifi bul
 
       if (offer) {
-        const lineItem = offer.items.find(item => item.itemId === itemId);
-        if (lineItem) {
-          lineItem.isActiveLine = false;
+        const lineItem = offer.items.find(item => item.itemId === itemId);// İlgili teklif satırını bul
+        if (lineItem) {// Teklif satırını pasif yap
+          lineItem.isActiveLine = false;// Teklif satırını pasif yap
         }
       }
     },

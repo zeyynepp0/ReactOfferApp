@@ -1,11 +1,10 @@
 import { useState, useCallback } from 'react';
 
-// Custom hook for modal state management
-export const useModal = (initialOpen = false) => {
-  const [isOpen, setIsOpen] = useState(initialOpen);
+export const useModal = (initialOpen = false) => {// modal başlangıç durumu
+  const [isOpen, setIsOpen] = useState(initialOpen);// modal açık/kapalı durumu
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const openModal = useCallback((id?: string) => {
+  const openModal = useCallback((id?: string) => {// modalı açma işlevi
     setEditingId(id || null);
     setIsOpen(true);
   }, []);
@@ -15,12 +14,12 @@ export const useModal = (initialOpen = false) => {
     setEditingId(null);
   }, []);
 
-  const openForEdit = useCallback((id: string) => {
+  const openForEdit = useCallback((id: string) => {// belirli bir ID için modalı düzenleme modunda açma işlevi
     setEditingId(id);
     setIsOpen(true);
   }, []);
 
-  const openForCreate = useCallback(() => {
+  const openForCreate = useCallback(() => {// yeni oluşturma modunda modalı açma işlevi
     setEditingId(null);
     setIsOpen(true);
   }, []);

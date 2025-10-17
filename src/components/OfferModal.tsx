@@ -1,6 +1,6 @@
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import ErrorAlert from './offer-modal/ErrorAlert';
+//import ErrorAlert from './offer-modal/ErrorAlert';
 import ItemRow from './offer-modal/ItemRow';
 import TotalsSummary from './offer-modal/TotalsSummary';
 import { offerSchema, type OfferFormData } from '../schemas/validationSchemas';
@@ -8,6 +8,7 @@ import ValidationAlert from './ValidationAlert';
 import { useValidation } from '../hooks/useValidation';
 import { useOffers } from '../hooks/useOffers';
 import { useOfferForm } from '../hooks/useOfferForm';
+import { computeTotals } from '../utils/offerCalculations';
 
 interface OfferModalProps {
   setModalOpen: (value: boolean) => void;
@@ -19,8 +20,8 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
   const { errors, validate, clearErrors, setCustomErrors } = useValidation({ autoCloseDelay: 7000 });
   
   const {// useOfferForm'dan gerekli state ve fonksiyonları alıyoruz
-    customerName,
-    setCustomerName,
+    customerName, //müşteri adını alıyoruz
+    setCustomerName,// Müşteri adını ve set fonksiyonunu alıyoruz
     offerName,
     setOfferName,
     offerDate,
@@ -38,7 +39,7 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
     updateItem,
     deleteItem,
     toggleItemSelection,
-    calculateTotals,
+    //calculateTotals,
   } = useOfferForm(editingOfferId, offers);// editingOfferId ve offers'ı useOfferForm'a geçiriyoruz
 
 
@@ -54,8 +55,8 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
   const handleSave = () => {
     clearErrors();
 
-    const { subTotal, discountTotal, vatTotal, grandTotal } = calculateTotals();// Güncel toplamları hesapla
-
+    //const { subTotal, discountTotal, vatTotal, grandTotal } = calculateTotals();// Güncel toplamları hesapla
+const { subTotal, discountTotal, vatTotal, grandTotal } = computeTotals(items);
     const offerData: OfferFormData = {// Teklif verilerini oluşturuyoruz 
       id: editingOfferId ?? uuidv4(),
       customerName,
@@ -106,13 +107,13 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
   };
 
   const handleDeleteItem = (index: number) => {
-    if (isApproved) return;
-    if (window.confirm('Bu kalemi silmek istediğinizden emin misiniz?')) {
-      const itemToDelete = items[index];
-      if (itemToDelete && editingOfferId) {
+    if (isApproved) return;// Onaylanmışsa silme işlemi yapma
+    if (window.confirm('Bu kalemi silmek istediğinizden emin misiniz?')) {// Silme işlemi onayı al
+      const itemToDelete = items[index];// Silinen satırı al
+      if (itemToDelete && editingOfferId) {// Eğer silinen satır varsa ve düzenleme modundaysa
         softDeleteOfferLine({ 
-          offerId: editingOfferId, 
-          itemId: itemToDelete.itemId 
+          offerId: editingOfferId, // Teklif ID'si
+          itemId: itemToDelete.itemId // Silinen satırın ID'si
         });
       }
       deleteItem(index);
@@ -125,9 +126,16 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
         <h3 className="text-xl font-semibold mb-4">
           {editingOfferId ? 'Teklif Düzenle' : 'Yeni Teklif Ekle'}
         </h3>
+        
+        {isApproved && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 mb-4 rounded-md shadow-sm" role="alert">
+            <p className="font-bold">Bilgilendirme</p>
+            <p>Onaylanmış teklifler üzerinde değişiklik yapılamaz.</p>
+          </div>
+        )}
 
         <div>
-          <ErrorAlert errors={[]} />
+          {/* <ErrorAlert errors={[]} /> */}
           
           <label className="block mb-1 text-sm font-medium text-gray-700">
             Müşteri Adı
@@ -174,21 +182,21 @@ const OfferModal: React.FC<OfferModalProps> = ({ setModalOpen, editingOfferId })
           </select>
 
           <div>
-            <table className="w-full border-collapse table-fixed mb-4">
+            <table className="w-full border-collapse  mb-8">
               <thead>
                 <tr>
-                  <th className="border border-slate-200 p-2 bg-slate-50">Tür</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">Ad</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">Miktar</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">Tutar</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">Ara Toplam (₺)</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">İndirim (%)</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">İndirim (Birim)</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">İndirim Toplamı(₺)</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">KDV</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">KDV Toplamı</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">Toplam</th>
-                  <th className="border border-slate-200 p-2 bg-slate-50">Sil</th>
+                  <th className="border border-slate-200 p-2 px-6 bg-slate-50">Tür</th>
+                  <th className="border border-slate-200 p-2 px-6 bg-slate-50">Ad</th>
+                  <th className="border border-slate-200 p-2 px-6 bg-slate-50">Miktar</th>
+                  <th className="border border-slate-200 p-2 px-6 bg-slate-50">Tutar</th>
+                  <th className="border border-slate-200 p-2 px-6 bg-slate-50">Ara Toplam (₺)</th>
+                  <th className="border border-slate-200 p-2 px-6 bg-slate-50">İndirim (%)</th>
+                  <th className="border border-slate-200 p-2 px-6 bg-slate-50">İndirim (Birim)</th>
+                  <th className="border border-slate-200 p-2 px-6 bg-slate-50">İndirim Toplamı (₺)</th>
+                  <th className="border border-slate-200 p-2 px-6 bg-slate-50">KDV</th>
+                  <th className="border border-slate-200 p-2 px-6 bg-slate-50">KDV Toplamı</th>
+                  <th className="border border-slate-200 p-2 px-6 bg-slate-50">Toplam</th>
+                  <th className="border border-slate-200 p-2 px-6 bg-slate-50">Sil</th>
                 </tr>
               </thead>
               <tbody>

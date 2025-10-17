@@ -1,4 +1,4 @@
- interface ErrorAlertProps {
+/*  interface ErrorAlertProps {
   errors: string[];
 }
 
@@ -16,3 +16,4 @@ export default function ErrorAlert({ errors }: ErrorAlertProps) {
 }
 
  
+ */

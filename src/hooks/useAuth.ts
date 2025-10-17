@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import type { RootState, AppDispatch } from '../redux/store';
 import { login, logout, checkAuth } from '../redux/authSlice';
 
-// Custom hook for authentication management
+// müşteri kimlik doğrulama durumunu ve işlemlerini yöneten özel hook
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);

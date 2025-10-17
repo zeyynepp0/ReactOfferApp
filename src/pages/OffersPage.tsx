@@ -5,9 +5,9 @@ import OfferModal from '../components/OfferModal';
 import { useSidebar } from '../hooks/useSidebar';
 import { useModal } from '../hooks/useModal';
 
-const OffersPage: React.FC = () => {
-  const { isOpen: sidebarOpen, toggleSidebar } = useSidebar();
-  const { isOpen: modalOpen, editingId: editingOfferId, openForCreate, openForEdit, closeModal } = useModal();
+const OffersPage: React.FC = () => {// OffersPage bileşeni
+  const { isOpen: sidebarOpen, toggleSidebar } = useSidebar();// sidebar durumunu yönetmek için useSidebar hook'unu kullanıyoruz
+  const { isOpen: modalOpen, editingId: editingOfferId, openForCreate, openForEdit, closeModal } = useModal();// modal durumunu yönetmek için useModal hook'unu kullanıyoruz
 
   return (
     <div className="flex h-screen w-screen bg-[linear-gradient(135deg,#aabed3,#fed6e3)] relative">
@@ -30,8 +30,8 @@ const OffersPage: React.FC = () => {
         </button>
 
         <OfferTable 
-          setModalOpen={(open) => open ? openForCreate() : closeModal()} 
-          setEditingOfferId={(id) => id ? openForEdit(id) : closeModal()} 
+          setModalOpen={(open) => open ? openForCreate() : closeModal()} // modal açma kapama fonksiyonu
+          setEditingOfferId={(id) => id ? openForEdit(id) : closeModal()} // düzenlenen teklif id'sini ayarlama fonksiyonu
         />
 
         {modalOpen && (

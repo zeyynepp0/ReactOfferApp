@@ -12,14 +12,14 @@ export const useOfferForm = (editingOfferId: string | null, offers: any[]) => {
   const [items, setItems] = useState<OfferLineItem[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
 
-  const isApproved = offerStatus === 'Onaylandı';
+  const isApproved = offerStatus === 'Onaylandı';// teklif onaylandı mı kontrolü
 
   
-  useEffect(() => {
+  useEffect(() => {// düzenlenen teklif yüklendiğinde formu doldur
     if (editingOfferId) {
-      const offer = offers.find(o => o.id === editingOfferId);
+      const offer = offers.find(o => o.id === editingOfferId);// düzenlenen teklifi bul
       if (offer) {
-        setCustomerName(offer.customerName);
+        setCustomerName(offer.customerName);// müşteri adını ayarla
         setOfferName(offer.offerName);
         setOfferDate(offer.offerDate);
         setOfferStatus(offer.offerStatus as OfferStatus);
@@ -50,7 +50,7 @@ export const useOfferForm = (editingOfferId: string | null, offers: any[]) => {
     }
   }, [items, offerStatus]); */
 
-  const addItem = useCallback(() => {
+  const addItem = useCallback(() => {//yeni bir kalem ekle
     if (isApproved) return;
     const newItem: OfferLineItem = {
       itemId: uuidv4(),
@@ -71,33 +71,33 @@ export const useOfferForm = (editingOfferId: string | null, offers: any[]) => {
     setItems(prev => [...prev, newItem]);
   }, [isApproved]);
 
-  const updateItem = useCallback((index: number, field: string, value: any) => {
-    if (isApproved) return;
+  const updateItem = useCallback((index: number, field: string, value: any) => {// satırdaki belirli alanı güncelle
+    if (isApproved) return;// onaylanmışsa güncelleme yapma
     setItems(prev => {
       const newItems = [...prev];
       newItems[index] = { ...newItems[index], [field]: value };
       
-      const computed = computeLineDerived(newItems[index]);
+      const computed = computeLineDerived(newItems[index]);// türetilmiş alanları hesapla
       newItems[index] = { ...newItems[index], ...computed };
       
       return newItems;
     });
   }, [isApproved]);
 
-  const deleteItem = useCallback((index: number) => {
+  const deleteItem = useCallback((index: number) => {//seçilen satırı sil 
     if (isApproved) return;
-    const itemToDelete = items[index];
-    if (itemToDelete) {
-      setSelectedItemIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(itemToDelete.itemId);
+    const itemToDelete = items[index];// Silinen satırı al
+    if (itemToDelete) {// Eğer silinen satır varsa
+      setSelectedItemIds(prev => {// Silinen satır seçiliyse, seçimi kaldır
+        const newSet = new Set(prev);// Yeni bir Set oluştur
+        newSet.delete(itemToDelete.itemId);// Silinen satırın itemId'sini Set'ten kaldır
         return newSet;
       });
     }
     setItems(prev => prev.filter((_, i) => i !== index));
   }, [isApproved, items]);
 
-  const toggleItemSelection = useCallback((itemId: string) => {
+  const toggleItemSelection = useCallback((itemId: string) => {// Satır seçimini değiştir
     setSelectedItemIds(prev => {
       const next = new Set(prev);
       if (next.has(itemId)) next.delete(itemId); 
@@ -106,19 +106,19 @@ export const useOfferForm = (editingOfferId: string | null, offers: any[]) => {
     });
   }, []);
 
-  const calculateTotals = useCallback(() => {
+  /* const calculateTotals = useCallback(() => {// Toplamları hesapla 
     const subTotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
     const discountTotal = items.reduce((sum, item) => sum + item.lineDiscount, 0);
     const vatTotal = items.reduce((sum, item) => sum + item.lineVat, 0);
     const grandTotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
     
     return { subTotal, discountTotal, vatTotal, grandTotal };
-  }, [items]);
+  }, [items]); */
 
   const { subTotal: liveSubTotal, discountTotal: liveDiscountTotal, vatTotal: liveVatTotal, grandTotal: liveGrandTotal } = computeLiveTotals(items, selectedItemIds);
 
   return {
-    // Form fields
+    
     customerName,
     setCustomerName,
     offerName,
@@ -130,18 +130,18 @@ export const useOfferForm = (editingOfferId: string | null, offers: any[]) => {
     items,
     selectedItemIds,
     
-    // Computed values
+    
     isApproved,
     liveSubTotal,
     liveDiscountTotal,
     liveVatTotal,
     liveGrandTotal,
     
-    // Actions
+    
     addItem,
     updateItem,
     deleteItem,
     toggleItemSelection,
-    calculateTotals,
+    //calculateTotals,
   };
 };

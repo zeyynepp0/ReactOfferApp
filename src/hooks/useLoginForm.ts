@@ -36,7 +36,7 @@ export const useLoginForm = () => {
       
       navigate("/offers");
     } else {
-      // Handle login error - this will be handled by validation
+      // hatalı giriş durumu 
       throw new Error("Kullanıcı adı veya şifre hatalı!");
     }
   }, [email, password, loginUser, navigate]);
