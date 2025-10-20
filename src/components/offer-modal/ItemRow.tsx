@@ -1,38 +1,35 @@
 // src/components/offer-modal/ItemRow.tsx
-
 import React, { useEffect } from 'react';
-// useWatch, Controller ve tipler import ediliyor
-import { Controller, useWatch, type Control, type UseFormSetValue, type UseFormTrigger, type FieldErrors } from 'react-hook-form';
-// offerLineItemSchema artık burada kullanılmıyor (validasyon Controller veya ana formda)
+import { Controller, useWatch, type Control, type UseFormSetValue, type UseFormTrigger } from 'react-hook-form';
 import { type OfferFormData, type OfferLineItemFormData } from '../../schemas/validationSchemas';
 import { toast } from 'react-toastify';
 import { FaTrash } from "react-icons/fa";
+// Hesaplama fonksiyonunu utils'den import et
+import { computeLineDerived } from '../../utils/offerCalculations';
+import type { OfferLineItem, KDV } from '../../redux/offersSlice'; // KDV tipini de al
+
 interface ItemRowProps {
   control: Control<OfferFormData>;
   index: number;
   isApproved: boolean;
-  onDelete: () => void; // Sadece index'siz silme fonksiyonu (OfferItemTable'da index ile çağrılacak)
+  onDelete: () => void;
   setParentValue: UseFormSetValue<OfferFormData>;
   triggerField: UseFormTrigger<OfferFormData>;
-  // formErrors?: FieldErrors<OfferLineItemFormData>; // Opsiyonel: Hataları toplu almak isterseniz
 }
 
 export default function ItemRow({
   control,
   index,
   isApproved,
-  onDelete, // Direkt removeRow(index) çağrısını alan fonksiyon
+  onDelete,
   setParentValue,
-  triggerField,
-  // formErrors // Kaldırıldı, Controller içinden alınacak
 }: ItemRowProps) {
 
-  // İzlenecek alanları belirle (sadece hesaplama için gerekenler + materialServiceName)
+  // İzlenecek alanları belirle
   const [
       quantity, unitPrice, discountPercentage, discountUnit, kdv,
-      // Hesaplanan değerleri de izle (useEffect karşılaştırması için)
       currentLineTotal, currentLineDiscount, currentLineVat, currentTotalPrice,
-      materialServiceName // Silme onayı için
+      materialServiceName
   ] = useWatch({
       control,
       name: [
@@ -51,48 +48,55 @@ export default function ItemRow({
 
   // Hesaplamalar ve Ana Formu Güncelleme
   useEffect(() => {
-    const numQuantity = Number(quantity) || 0;
-    const numUnitPrice = Number(unitPrice) || 0;
-    const numDiscountPercentage = Number(discountPercentage) || 0;
-    const numDiscountUnit = Number(discountUnit) || 0;
-    const numKdv = Number(kdv) || 0.18;
+    // computeLineDerived fonksiyonunu kullanmak için bir OfferLineItem taslağı oluştur
+    const itemForCalc: OfferLineItem = {
+        quantity: Number(quantity) || 0,
+        unitPrice: Number(unitPrice) || 0,
+        discountPercentage: Number(discountPercentage) || 0,
+        discountUnit: Number(discountUnit) || 0,
+        kdv: (Number(kdv) || 0.18) as KDV,
+        // Fonksiyonun tipini karşılamak için gerekli diğer alanlar
+        itemId: '', // Gerçek ID'ye gerek yok, sadece hesaplama için
+        itemType: 'Malzeme',
+        materialServiceName: '',
+        discountAmount: 0, // Bu alan şemada var ama formda kullanılmıyor
+        lineTotal: 0,
+        lineDiscount: 0,
+        lineVat: 0,
+        totalPrice: 0,
+        isActiveLine: true
+    };
 
-    const newLineTotal = numQuantity * numUnitPrice;
-    const newLineDiscount = newLineTotal * (numDiscountPercentage / 100) + numDiscountUnit;
-    const baseForVat = Math.max(0, newLineTotal - newLineDiscount);
-    const newLineVat = baseForVat * numKdv;
-    const newTotalPrice = baseForVat + newLineVat;
+    // Hesaplamayı utils fonksiyonu ile yap
+    const { lineTotal, lineDiscount, lineVat, totalPrice } = computeLineDerived(itemForCalc);
 
     // Sadece değişen hesaplanmış alanları ana forma yaz
-    if (currentLineTotal !== newLineTotal) {
-      setParentValue(`items.${index}.lineTotal`, newLineTotal, { shouldValidate: false, shouldDirty: true, shouldTouch: true });
+    // shouldDirty: true -> formun değiştiğini RHF'e bildirir
+    if (currentLineTotal !== lineTotal) {
+      setParentValue(`items.${index}.lineTotal`, lineTotal, { shouldValidate: false, shouldDirty: true });
     }
-    if (currentLineDiscount !== newLineDiscount) {
-      setParentValue(`items.${index}.lineDiscount`, newLineDiscount, { shouldValidate: false, shouldDirty: true, shouldTouch: true });
+    if (currentLineDiscount !== lineDiscount) {
+      setParentValue(`items.${index}.lineDiscount`, lineDiscount, { shouldValidate: false, shouldDirty: true });
     }
-    if (currentLineVat !== newLineVat) {
-      setParentValue(`items.${index}.lineVat`, newLineVat, { shouldValidate: false, shouldDirty: true, shouldTouch: true });
+    if (currentLineVat !== lineVat) {
+      setParentValue(`items.${index}.lineVat`, lineVat, { shouldValidate: false, shouldDirty: true });
     }
-    if (currentTotalPrice !== newTotalPrice) {
-      setParentValue(`items.${index}.totalPrice`, newTotalPrice, { shouldValidate: false, shouldDirty: true, shouldTouch: true });
+    if (currentTotalPrice !== totalPrice) {
+      setParentValue(`items.${index}.totalPrice`, totalPrice, { shouldValidate: false, shouldDirty: true });
     }
 
   }, [
     quantity, unitPrice, discountPercentage, discountUnit, kdv, // İzlenen inputlar
-    index, setParentValue, // Sabit veya stabil referanslar
-    // Hesaplanan değerleri de ekleyerek karşılaştırma için useEffect'in tekrar çalışmasını sağla
-    currentLineTotal, currentLineDiscount, currentLineVat, currentTotalPrice
+    index, setParentValue,
+    currentLineTotal, currentLineDiscount, currentLineVat, currentTotalPrice // Değişiklik kontrolü için
   ]);
 
-
-  // Satır Validasyonu
-  const handleRowValidate = async () => { /* ... önceki haliyle aynı ... */ };
 
   // Satır Silme (Onay ve Bildirim ile)
   const handleRowDelete = () => {
     const itemName = materialServiceName || 'İsimsiz';
     if (window.confirm(`Satır ${index + 1}: "${itemName}" silinecek. Emin misiniz?`)) {
-      onDelete(); // Parent'tan gelen removeRow(index)'i çağıracak
+      onDelete(); // Parent'tan gelen remove(index) fonksiyonunu çağırır
       toast.info(`Satır ${index + 1} silindi.`);
     }
   };
@@ -108,7 +112,7 @@ export default function ItemRow({
         <td className="border-b border-slate-200 p-2 align-top">
           <Controller name={`items.${index}.materialServiceName`} control={control}
             render={({ field, fieldState: { error } }) => (
-              <div> {/* Hata mesajını alta almak için div */}
+              <div>
                 <input {...field} type="text" disabled={isApproved} className={`w-full border rounded px-2 py-1 ${error ? 'border-red-500' : 'border-gray-300'}`} placeholder="Ad giriniz" />
                 {error && <span className="text-red-500 text-xs block mt-1">{error.message}</span>}
               </div>
@@ -183,13 +187,20 @@ export default function ItemRow({
         {/* İşlemler */}
         <td className="border-b border-slate-200 p-2 align-top text-center">
           <div className="flex gap-1 justify-center">
-           
             {/* Sil Butonu */}
-            {!isApproved && ( <button type="button" onClick={handleRowDelete} className="p-1 text-red-600 hover:text-red-800" title="Satırı Sil"> <svg className="w-5 h-1"  /> Sil</button> )}
+            {!isApproved && ( 
+              <button 
+                type="button" 
+                onClick={handleRowDelete} 
+                className="p-1 text-red-600 hover:text-red-800 flex items-center" 
+                title="Satırı Sil"
+              >
+                <FaTrash className="w-4 h-4 inline mr-1" /> Sil
+              </button> 
+            )}
           </div>
         </td>
       </tr>
-      {/* Hata mesajları artık Controller içinde render ediliyor */}
     </>
   );
 }

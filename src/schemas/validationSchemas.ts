@@ -1,3 +1,4 @@
+// src/schemas/validationSchemas.ts
 import { z } from 'zod';
 
 // Login form validation schema
@@ -12,7 +13,6 @@ export const loginSchema = z.object({
 
 // Offer form validation schemas
 export const offerLineItemSchema = z.object({
-  //id: z.string().optional(),
   itemId: z.string().min(1, 'Item ID zorunludur'),
   itemType: z.enum(['Malzeme', 'Hizmet']),
   materialServiceName: z.string()
@@ -67,7 +67,7 @@ export const offerSchema = z.object({
     }, 'Geçerli bir tarih giriniz'),
   offerStatus: z.enum(['Taslak', 'Onay Bekliyor', 'Onaylandı']),
   items: z.array(offerLineItemSchema)
-    //.min(1, 'En az bir satır eklemelisiniz')
+    //.min(1, 'En az bir satır eklemelisiniz') // Kayıt sırasında manuel kontrol ediliyor
     .max(100, 'Çok fazla satır eklenemez'),
   subTotal: z.number().min(0),
   discountTotal: z.number().min(0),
@@ -76,32 +76,9 @@ export const offerSchema = z.object({
   isActive: z.boolean()
 });
 
-
-
 //typescript türleri için şemalardan çıkarımlar
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type OfferFormData = z.infer<typeof offerSchema>;
-//export type OfferLineItemFormData = z.infer<typeof offerLineItemSchema>;
 export type OfferLineItemFormData = z.infer<typeof offerLineItemSchema>;
 
-//validation fonksiyonları
-export const validateLogin = (data: unknown) => {
-  return loginSchema.safeParse(data);
-};
-
-export const validateOffer = (data: unknown) => {// teklif verilerini doğrulama fonksiyonu
-  return offerSchema.safeParse(data);
-};
-
-export const validateOfferLineItem = (data: unknown) => {// teklif satır öğesi verilerini doğrulama fonksiyonu
-  return offerLineItemSchema.safeParse(data);
-};
-
-
-export const formatZodErrors = (errors: z.ZodError): string[] => { // Zod hata nesnesini okunabilir hata mesajlarına dönüştürme fonksiyonu
-  return errors.issues.map(error => {
-    const path = error.path.join('.');
-    return path ? `${path}: ${error.message}` : error.message;
-  });
-};
-
+// zodResolver kullanıldığı için manuel validasyon fonksiyonları (validateLogin, validateOffer vb.) kaldırıldı.

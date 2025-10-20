@@ -1,6 +1,6 @@
+// src/components/NewOfferModal.tsx
 import { useEffect, useMemo, useRef } from "react";
-// Gerekli tipler (FieldErrors dahil) ve fonksiyonlar import edildi
-import { useForm, useFieldArray, type UseFormTrigger, type FieldErrors, Controller } from "react-hook-form";
+import { useForm, useFieldArray, type UseFormTrigger, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { offerSchema, type OfferFormData, type OfferLineItemFormData } from '../schemas/validationSchemas';
 import Input from "./Input";
@@ -73,9 +73,10 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
     }
   }, [editingOfferId, offerToEdit, reset]);
 
-  // Toplamları hesaplama
+  // Toplamları hesaplama (utils/computeTotals kullanarak)
   const watchedItems = watch("items", []);
   useEffect(() => {
+    // Sadece geçerli (adı girilmiş) satırları hesaba kat
     const validItems = watchedItems.filter(item => item && item.materialServiceName && item.materialServiceName.trim() !== '');
     const { subTotal, discountTotal, vatTotal, grandTotal } = computeTotals(validItems as OfferLineItem[]);
     setValue("subTotal", subTotal, { shouldValidate: false });
@@ -86,17 +87,21 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
 
   // Onaylama durumunu Redux'a kaydetme
    useEffect(() => {
+      // Sadece durum 'Onaylandı'ya değiştiğinde tetiklen
       if (currentOfferStatus === 'Onaylandı' && prevStatusRef.current !== 'Onaylandı') {
           const currentFormData = getValues();
           const filledItems = currentFormData.items.filter(item => item.materialServiceName && item.materialServiceName.trim() !== '');
+          
           if (currentFormData.items.length !== filledItems.length) {
               toast.warn(`Onaylama sırasında boş satırlar çıkarıldı.`);
           }
           if (filledItems.length === 0) {
              toast.error("Onaylanamadı! Teklifte geçerli satır bulunmuyor.");
+             // Durumu eski haline getir
              setValue('offerStatus', prevStatusRef.current || 'Taslak', { shouldDirty: true });
              return;
           }
+          
           const calculatedTotals = computeTotals(filledItems as OfferLineItem[]);
           const finalOffer: OfferItem = {
               ...currentFormData,
@@ -114,12 +119,14 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
               grandTotal: calculatedTotals.grandTotal,
               offerStatus: 'Onaylandı'
           };
+          
           if (editingOfferId) {
               dispatch(updateOffer(finalOffer));
           } else {
               dispatch(addOffer(finalOffer));
           }
       }
+      // Önceki durumu güncelle
       prevStatusRef.current = currentOfferStatus;
   }, [currentOfferStatus, dispatch, editingOfferId, getValues, setValue]);
 
@@ -129,12 +136,18 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
       toast.warn("Onaylanmış teklifler üzerinde değişiklik yapılamaz!");
       return;
     }
+
+    // Sadece adı girilmiş satırları kaydet
     const filledItems = data.items.filter(item => item.materialServiceName && item.materialServiceName.trim() !== '');
+    
     if (filledItems.length === 0) {
        toast.error("Kaydedilemedi. Lütfen en az bir geçerli satır ekleyin.");
        return;
     }
+
+    // Toplamları son kez utils ile hesapla
     const calculatedTotals = computeTotals(filledItems as OfferLineItem[]);
+    
     const finalOffer: OfferItem = {
       ...data,
       id: editingOfferId || uuidv4(),
@@ -150,6 +163,7 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
       vatTotal: calculatedTotals.vatTotal,
       grandTotal: calculatedTotals.grandTotal,
     };
+    
     if (editingOfferId) {
       dispatch(updateOffer(finalOffer));
       toast.success("Teklif başarıyla güncellendi!");
@@ -182,7 +196,7 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
     const newItem: OfferLineItemFormData = {
       itemId: uuidv4(), itemType: 'Malzeme', materialServiceName: '',
       quantity: 1, unitPrice: 0,
-      discountAmount: 0, // Eksik olan alan eklendi
+      discountAmount: 0, // Bu alan şemada var
       discountPercentage: 0, discountUnit: 0, kdv: 0.18,
       lineTotal: 0, lineDiscount: 0, lineVat: 0, totalPrice: 0, isActiveLine: true
     };
@@ -237,19 +251,26 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
                   onChange: (e) => {
                       const newValue = e.target.value as OfferFormData['offerStatus'];
                       const currentValue = getValues("offerStatus");
+                      // Sadece 'Onaylandı'ya geçerken uyar
                       if (newValue === 'Onaylandı' && currentValue !== 'Onaylandı') {
                           if (window.confirm("Teklifi 'Onaylandı' olarak işaretlemek istediğinize emin misiniz?\n\nBu işlem geri alınamaz ve teklif üzerinde DEĞİŞİKLİK YAPILAMAZ!")) {
+                              // Değeri RHF'e kaydet, bu useEffect'i tetikleyecek
                               setValue('offerStatus', newValue, { shouldDirty: true });
                               toast.success("Teklif onaylandı ve düzenlemeye kapatıldı.");
                           } else {
+                              // Kullanıcı iptal ederse, formu eski status değerine geri döndür
                               reset({ ...getValues(), offerStatus: currentValue });
                               toast.info("Onaylama işlemi iptal edildi.");
                           }
                       }
+                      // Diğer durum değişiklikleri (örn: Taslak -> Onay Bekliyor) için setValue
+                      else if (newValue !== 'Onaylandı') {
+                        setValue('offerStatus', newValue, { shouldDirty: true });
+                      }
                   }
               })}
               error={formErrors.offerStatus?.message}
-              disabled={isReadOnly}
+              disabled={isReadOnly} // Onaylandıysa hep kilitli
             />
           </div>
 
@@ -276,11 +297,13 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
                grandTotal={watch("grandTotal")}
              />
              <div className="flex justify-end gap-3 pt-5">
+                 {/* Sadece 'Onaylandı' DEĞİLSE kaydet/güncelle butonlarını göster */}
                  {!isReadOnly && (
                      <button type="submit" disabled={isSubmitting} className="bg-pink-600 text-white px-5 py-2 rounded-lg hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2">
                        {editingOfferId ? 'Güncelle' : 'Kaydet'}
                      </button>
                  )}
+                 {/* Sadece 'Onaylandı' DEĞİLSE ve DÜZENLEME modundaysa Sil butonunu göster */}
                  {!isReadOnly && editingOfferId && (
                      <button type="button" onClick={handleDelete} className="bg-red-500 text-white px-5 py-2 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
                        Sil
