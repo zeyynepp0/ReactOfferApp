@@ -1,7 +1,7 @@
 import React from 'react';
 import Sidebar from '../components/Sidebar';
 import OfferTable from '../components/OfferTable';
-import OfferModal from '../components/OfferModal';
+import NewOfferModal from '../components/NewOfferModal';
 import { useSidebar } from '../hooks/useSidebar';
 import { useModal } from '../hooks/useModal';
 
@@ -30,12 +30,11 @@ const OffersPage: React.FC = () => {// OffersPage bileşeni
         </button>
 
         <OfferTable 
-          setModalOpen={(open) => open ? openForCreate() : closeModal()} // modal açma kapama fonksiyonu
           setEditingOfferId={(id) => id ? openForEdit(id) : closeModal()} // düzenlenen teklif id'sini ayarlama fonksiyonu
         />
 
         {modalOpen && (
-          <OfferModal 
+          <NewOfferModal 
             setModalOpen={(open) => open ? openForCreate() : closeModal()} 
             editingOfferId={editingOfferId} 
           />

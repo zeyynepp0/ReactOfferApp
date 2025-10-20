@@ -10,7 +10,7 @@ export interface ColumnDef<T> {
   
 }
 
-interface TableProps<T extends { id: string | number }> {// T tipinin id alanına sahip olmasını zorunlu kılar
+interface TableProps<T> {// T tipinin id alanına sahip olmasını zorunlu kılar
     columns: ColumnDef<T>[];//kaç elema tanımlarsak o kadar kolon oluşturur ve bu bize dinamik kolon oluşturma imkanı verir
     //'T[]' generic olarak veri tipiyle ilgili esneklik sağlar
     data?: T[];
@@ -20,7 +20,7 @@ interface TableProps<T extends { id: string | number }> {// T tipinin id alanın
 
 
 
-export function Table<T extends { id: string | number }>({ columns, data = [], emptyDataText = "Gösterilecek veri yok", onRowClick }: TableProps<T>) {
+export function Table<T>({ columns, data = [], emptyDataText = "Gösterilecek veri yok", onRowClick }: TableProps<T>) {
     const [searchTerm, setSearchTerm] = useState('');
     const [ inputValue, setInputValue ] = useState('');// inputun değerini tutar
 

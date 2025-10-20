@@ -1,27 +1,26 @@
 import React from 'react';
 import { Table } from './Table';
 import type { ColumnDef } from './Table';
-import { useOffers } from '../hooks/useOffers';
+//import { useOffers } from '../hooks/useOffers';
+import { offerSchema, type OfferFormData } from '../schemas/validationSchemas';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
 interface OfferTableProps {
   setModalOpen: (value: boolean) => void;
   setEditingOfferId: (id: string | null) => void;
 }
 
-interface Offer {
-  id: string;
-  customerName: string;
-  offerName: string;
-  offerStatus: 'Taslak' | 'Onay Bekliyor' | 'Onaylandı'; 
-  offerDate: string;
-  grandTotal: number;
-  isActive: boolean;
-}
-
 const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId }) => {
-  const { activeOffers, softDeleteOffer } = useOffers();
+  //const { activeOffers, softDeleteOffer } = useOffers();
 
-  const columns: ColumnDef<Offer>[] = [
+  const { register, handleSubmit, formState: { errors } } = useForm<OfferFormData>({
+    resolver: zodResolver(offerSchema),
+  });
+  
+
+
+  const columns: ColumnDef<OfferFormData>[] = [
     {
       header: 'Teklif No',
       fieldKey: (_, index) => index + 1
@@ -63,7 +62,7 @@ const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setEditingOfferId(row.id);
+              setEditingOfferId(row.id ?? null);
               //setModalOpen(true);
             }}
             className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
@@ -71,12 +70,7 @@ const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId
             Düzenle
           </button>
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (window.confirm('Bu teklifi silmek istediğinizden emin misiniz?')) {
-                softDeleteOffer(row.id);
-              }
-            }}
+           
             className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
           >
             Sil
@@ -86,15 +80,15 @@ const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId
     },
   ];
 
-  const handleRowClick = (offer: Offer) => {
-    setEditingOfferId(offer.id);
+  const handleRowClick = (offer: OfferFormData) => {
+    setEditingOfferId(offer.id ?? null);
     //setModalOpen(true);
   };
 
   return (
-    <Table<Offer>
+    <Table
       columns={columns}
-      data={activeOffers}
+      //data={activeOffers}
       onRowClick={handleRowClick}
       emptyDataText="Henüz teklif bulunmuyor."
     />
