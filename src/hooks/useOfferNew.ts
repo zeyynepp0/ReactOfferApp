@@ -1,4 +1,4 @@
-import { useState } from "react";
+/* import { useState } from "react";
 import { offerSchema, type OfferFormData } from '../schemas/validationSchemas';
 import { v4 as uuidv4 } from "uuid";
 
@@ -26,7 +26,7 @@ export const useOfferNew = () => {
     setOffers((prev) => [...prev, newItem]);
   }; */
 
-  const addOffer = (newOffer: OfferFormData) => {
+/*   const addOffer = (newOffer: OfferFormData) => {
     
     const offerWithId = { ...newOffer, id: newOffer.id || uuidv4() };
     
@@ -73,5 +73,5 @@ export const useOfferNew = () => {
     //setSelectedItemsId,
   };
 };
-
-// export default useOfferItems
+ */
+// export default useOfferItems */

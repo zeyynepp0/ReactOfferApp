@@ -1,26 +1,32 @@
+// src/components/OfferTable.tsx
+
 import React from 'react';
 import { Table } from './Table';
 import type { ColumnDef } from './Table';
-//import { useOffers } from '../hooks/useOffers';
-import { offerSchema, type OfferFormData } from '../schemas/validationSchemas';
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useSelector } from 'react-redux'; // Eklendi
+import type { RootState } from '../redux/store'; // Eklendi
+import type { OfferItem } from '../redux/offersSlice'; // Eklendi (OfferFormData yerine Redux tipini kullanalım)
 
 interface OfferTableProps {
-  setModalOpen: (value: boolean) => void;
   setEditingOfferId: (id: string | null) => void;
 }
 
-const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId }) => {
-  //const { activeOffers, softDeleteOffer } = useOffers();
-
-  const { register, handleSubmit, formState: { errors } } = useForm<OfferFormData>({
-    resolver: zodResolver(offerSchema),
-  });
+const OfferTable: React.FC<OfferTableProps> = ({ setEditingOfferId }) => {
+  // Redux state'inden teklifleri çek
+  const { offers } = useSelector((state: RootState) => state.offers); // Eklendi
   
+  // Sadece 'isActive' olan teklifleri filtrele
+  const activeOffers = offers.filter(o => o.isActive); // Eklendi
+  
+  // Silme işlemi için useDispatch eklenebilir, ancak şimdilik focus kaydetmede.
+  // const dispatch = useDispatch();
+  // const { deleteOffer } = useOffers(); // Bu hook yerine Redux'taki deleteOffer kullanılmalı
+
+  // Not: Kolon tipi olarak 'OfferItem' kullandık, bu Redux'tan gelen tiple eşleşir
 
 
-  const columns: ColumnDef<OfferFormData>[] = [
+
+  const columns: ColumnDef<OfferItem>[] = [
     {
       header: 'Teklif No',
       fieldKey: (_, index) => index + 1
@@ -53,7 +59,8 @@ const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId
     },
     {
       header: 'Toplam Tutar',
-      fieldKey: 'grandTotal', 
+      // Toplam tutarı formatlayarak gösterelim
+      fieldKey: (row) => `${row.grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`
     },
     {
       header: 'İşlemler',
@@ -63,14 +70,19 @@ const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId
             onClick={(e) => {
               e.stopPropagation();
               setEditingOfferId(row.id ?? null);
-              //setModalOpen(true);
+              // setModalOpen(true); // Bu prop artık OfferPage'den yönetiliyor
             }}
             className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
           >
             Düzenle
           </button>
           <button
-           
+            onClick={(e) => {
+              e.stopPropagation();
+              // Burada Redux'tan 'deleteOffer' dispatch edilmeli
+              // dispatch(deleteOffer(row.id));
+              console.log("Sil butonu tıklandı (Redux dispatch eklenmeli):", row.id);
+            }}
             className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
           >
             Sil
@@ -80,15 +92,15 @@ const OfferTable: React.FC<OfferTableProps> = ({ setModalOpen, setEditingOfferId
     },
   ];
 
-  const handleRowClick = (offer: OfferFormData) => {
+  const handleRowClick = (offer: OfferItem) => {
     setEditingOfferId(offer.id ?? null);
-    //setModalOpen(true);
+    // setModalOpen(true); // Bu prop artık OfferPage'den yönetiliyor
   };
 
   return (
     <Table
       columns={columns}
-      //data={activeOffers}
+      data={activeOffers} // Yorum satırı kaldırıldı ve Redux verisi bağlandı
       onRowClick={handleRowClick}
       emptyDataText="Henüz teklif bulunmuyor."
     />

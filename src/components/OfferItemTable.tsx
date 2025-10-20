@@ -1,141 +1,105 @@
-import React, { useState } from 'react'
-import { offerSchema, type OfferFormData ,type OfferLineItemFormData} from "../schemas/validationSchemas";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray } from "react-hook-form";
-//import { useOffers } from '../hooks/useOffers';
-//import { fi } from 'zod/locales';
-import ItemRow from './offer-modal/ItemRow';
-import TotalsSummary from './offer-modal/TotalsSummary';
-//import { computeTotals } from '../utils/offerCalculations';
-//import { useOfferItems } from '../hooks/useOfferItems';
-import { v4 as uuidv4 } from "uuid";
+// src/components/OfferItemTable.tsx
 
+import React from 'react';
+// useFieldArray kaldırıldı, çünkü ana component'te
+// Gerekli tipleri import et
+import type { Control, UseFormSetValue, UseFormTrigger, FieldArrayWithId, FieldErrors } from "react-hook-form";
+import type { OfferFormData, OfferLineItemFormData } from "../schemas/validationSchemas";
+import ItemRow from './offer-modal/ItemRow'; // ItemRow'u import ediyoruz
 
 interface OfferItemTableProps {
-  setModalOpen: (value: boolean) => void;
-  setEditingOfferItemId: (id: string | null) => void;
   isApproved: boolean;
-} 
+  control: Control<OfferFormData>;
+  // useFieldArray'den gelen fields dizisi
+  fields: FieldArrayWithId<OfferFormData, "items", "fieldId">[];
+  // Satır silme fonksiyonu (parent'tan gelen)
+  removeRow: (index: number) => void;
+  // Satır ekleme fonksiyonu (parent'tan gelen)
+  appendRow: () => void; // Parametre almasına gerek yok
+  // Ana formun setValue fonksiyonu (ItemRow'a geçilecek)
+  setValue: UseFormSetValue<OfferFormData>;
+  // Ana formun trigger fonksiyonu (ItemRow'a geçilecek)
+  triggerField: UseFormTrigger<OfferFormData>;
+  // Ana formun items hataları (ItemRow'a geçilecek)
+  formErrors: FieldErrors<OfferLineItemFormData[]> | undefined;
+}
 
-const OfferItemTable: React.FC<OfferItemTableProps> = ({ 
-  setModalOpen, 
-  setEditingOfferItemId, 
-  isApproved 
+const OfferItemTable: React.FC<OfferItemTableProps> = ({
+  isApproved,
+  control,
+  fields, // fields prop olarak alındı
+  removeRow, // removeRow prop olarak alındı
+  appendRow, // appendRow prop olarak alındı
+  setValue, // setValue prop olarak alındı
+  triggerField, // triggerField prop olarak alındı
+  formErrors // formErrors prop olarak alındı
 }) => {
-  
-  
-  const [selectedItems, setSelectedItemsId] = useState<Set<string>>(new Set());
 
-  
-  const toggleItemSelection = (itemId: string) => {
-    setSelectedItemsId((prev) => {
-      const newSet = new Set(prev);
-      newSet.has(itemId) ? newSet.delete(itemId) : newSet.add(itemId);
-      return newSet;
-    });
-  };
-
-
-
-  //useFieldArray kurulumu
-  const { control,  handleSubmit, setValue}=  useForm<OfferFormData>({
-    resolver: zodResolver(offerSchema),
-    defaultValues: {
-      /* id: uuidv4(),
-      customerName: '',
-      offerName: '',
-      offerDate: new Date().toISOString().split('T')[0],
-      offerStatus: 'Taslak',
-      items: items,
-      subTotal: 0,
-      discountTotal: 0,
-      vatTotal: 0,
-      grandTotal: 0,
-      isActive: true */
-      //başlangıç değerleri burada ayarlanıyor.
-      items: []
-    },
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "items",
-  });
-
-const handleAddRow = () => {
-  const newItem: OfferLineItemFormData = {
-    itemId: uuidv4(),
-    itemType: 'Malzeme',
-    materialServiceName: '',
-    quantity: 1,
-    unitPrice: 0,
-    discountAmount: 0,
-    discountUnit: 0,
-    discountPercentage: 0,
-    kdv: 0.18,
-    lineTotal: 0,
-    lineDiscount: 0,
-    lineVat: 0,
-    totalPrice: 0,
-    isActiveLine: true
-  };
-  append(newItem);
-  };
-
-
-   const handleItemChange = (index: number, field: string, value: any) => {
-    setValue(`items.${index}.${field as keyof OfferLineItemFormData}`, value, {
-      shouldValidate: true, // Değişiklik sonrası validasyon çalıştır
-    });
-  }; 
-
-  //const onSubmit = (data: OfferLineItemFormData) => { console.log(data); };
-
+  // Kendi useFieldArray hook'u kaldırıldı.
+  // handleAddRow ve handleRemoveRow fonksiyonları kaldırıldı.
 
   return (
- <>
-  <table className="w-full border-collapse  mb-8">
-               <thead>
-                 <tr>
-                   <th className="border border-slate-200 p-2 px-6 bg-slate-50">Tür</th>
-                   <th className="border border-slate-200 p-2 px-6 bg-slate-50">Ad</th>
-                   <th className="border border-slate-200 p-2 px-6 bg-slate-50">Miktar</th>
-                   <th className="border border-slate-200 p-2 px-6 bg-slate-50">Tutar</th>
-                   <th className="border border-slate-200 p-2 px-6 bg-slate-50">Ara Toplam (₺)</th>
-                   <th className="border border-slate-200 p-2 px-6 bg-slate-50">İndirim (%)</th>
-                   <th className="border border-slate-200 p-2 px-6 bg-slate-50">İndirim (Birim)</th>
-                   <th className="border border-slate-200 p-2 px-6 bg-slate-50">İndirim Toplamı (₺)</th>
-                   <th className="border border-slate-200 p-2 px-6 bg-slate-50">KDV</th>
-                   <th className="border border-slate-200 p-2 px-6 bg-slate-50">KDV Toplamı</th>
-                   <th className="border border-slate-200 p-2 px-6 bg-slate-50">Toplam</th>
-                   <th className="border border-slate-200 p-2 px-6 bg-slate-50">Sil</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 {fields.map((field, index) => (
-                   <ItemRow 
-                     key={field.id}
-                     item={field}
-                     index={index}
-                     isApproved={isApproved}
-                     selected={selectedItems.has(field.itemId)}
-                     onChange={handleItemChange}
-                     onToggleSelect={toggleItemSelection}
-                     onDelete={remove}
-                   />
-                 ))}
-               </tbody>
-             </table>
- <div className="flex justify-between items-center mt-4">
+    <>
+      {/* Tablo */}
+      <div className="overflow-x-auto relative border rounded-md">
+        <table className="w-full border-collapse min-w-[1200px]">
+          {/* Tablo Başlıkları (thead) */}
+          <thead>
+            <tr className="bg-slate-100 text-sm">
+              <th className="border-b border-slate-300 p-2 px-3 text-left font-semibold">Tür</th>
+              <th className="border-b border-slate-300 p-2 px-3 text-left font-semibold w-1/4">Ad</th>
+              <th className="border-b border-slate-300 p-2 px-3 text-right font-semibold">Miktar</th>
+              <th className="border-b border-slate-300 p-2 px-3 text-right font-semibold">Birim Fiyat</th>
+              <th className="border-b border-slate-300 p-2 px-3 text-right font-semibold">Ara Top.</th>
+              <th className="border-b border-slate-300 p-2 px-3 text-right font-semibold">İnd.(%)</th>
+              <th className="border-b border-slate-300 p-2 px-3 text-right font-semibold">İnd.(Birim)</th>
+              <th className="border-b border-slate-300 p-2 px-3 text-right font-semibold">İnd. Top.</th>
+              <th className="border-b border-slate-300 p-2 px-3 text-center font-semibold">KDV</th>
+              <th className="border-b border-slate-300 p-2 px-3 text-right font-semibold">KDV Top.</th>
+              <th className="border-b border-slate-300 p-2 px-3 text-right font-semibold">Toplam</th>
+              <th className="border-b border-slate-300 p-2 px-3 text-center font-semibold">İşlem</th>
+            </tr>
+          </thead>
+          {/* Tablo İçeriği (tbody) */}
+          <tbody>
+            {/* fields dizisini map ile dönerek her satır için ItemRow oluştur */}
+            {fields.map((field, index) => (
+              <ItemRow
+                key={field.fieldId} // key olarak 'fieldId' kullanılıyor (NewOfferModal'da belirttik)
+                control={control}
+                index={index}
+                isApproved={isApproved}
+                // onDelete prop'u ItemRow'un handleRowDelete'ini tetikler, o da removeRow'u çağırır
+                onDelete={() => removeRow(index)} // Doğrudan parent'ın remove fonksiyonunu çağır
+                setParentValue={setValue} // Parent'ın setValue'ını geçir
+                triggerField={triggerField} // Parent'ın trigger'ını geçir
+                // ItemRow artık kendi hatalarını Controller içinden alacak, formErrors'a gerek yok
+                // formErrors={formErrors?.[index]} // İsteğe bağlı: Hataları toplu göstermek isterseniz
+              />
+            ))}
+            {/* Eğer hiç satır yoksa bilgi mesajı */}
+            {fields.length === 0 && (
+                <tr>
+                    <td colSpan={12} className="text-center text-gray-500 p-4 border-b border-slate-200">
+                        Henüz satır eklenmedi.
+                    </td>
+                </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Satır Ekle Butonu */}
+      <div className="flex justify-start items-center mt-3">
         <button
           type="button"
-          onClick={handleAddRow}
-          className="bg-blue-500 text-white px-3 py-2 rounded-md"
+          onClick={appendRow} // Parent'tan gelen append fonksiyonunu çağır
+          className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 disabled:bg-gray-400"
+          disabled={isApproved}
         >
           + Satır Ekle
         </button>
-
-      </div>  
+      </div>
     </>
   );
 };

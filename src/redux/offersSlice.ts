@@ -68,12 +68,11 @@ const offersSlice = createSlice({
       state.offers.push(action.payload);
     },
     updateOffer(state, action: PayloadAction<OfferItem>) {
-      const index = state.offers.findIndex(o => o.id === action.payload.id);
-      if (index >= 0) state.offers[index] = action.payload;
+      // Doğrudan state'i değiştirmek yerine yeni bir dizi döndür
+      state.offers = state.offers.map(offer =>
+        offer.id === action.payload.id ? action.payload : offer
+      );
     },
-    /* deleteOffer(state, action: PayloadAction<string>) {
-      state.offers = state.offers.filter(o => o.id !== action.payload);
-    }, */
 
     deleteOffer(state, action: PayloadAction<string>) {// PayloadAction içindeki string, silinecek teklifin ID'sini temsil eder
       const offerIdToDelete = action.payload;

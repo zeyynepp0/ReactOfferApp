@@ -1,301 +1,195 @@
-import React, { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import type { OfferLineItemFormData } from '../../schemas/validationSchemas';
+// src/components/offer-modal/ItemRow.tsx
 
-
-
+import React, { useEffect } from 'react';
+// useWatch, Controller ve tipler import ediliyor
+import { Controller, useWatch, type Control, type UseFormSetValue, type UseFormTrigger, type FieldErrors } from 'react-hook-form';
+// offerLineItemSchema artık burada kullanılmıyor (validasyon Controller veya ana formda)
+import { type OfferFormData, type OfferLineItemFormData } from '../../schemas/validationSchemas';
+import { toast } from 'react-toastify';
+import { FaTrash } from "react-icons/fa";
 interface ItemRowProps {
-  item: OfferLineItemFormData;
+  control: Control<OfferFormData>;
   index: number;
   isApproved: boolean;
-  onSave: (index: number, data: OfferLineItemFormData) => void;
-  onDelete: (index: number) => void;
-  onUpdate: (index: number, data: OfferLineItemFormData) => void;
-  isDraft: boolean;
-  isSaving: boolean;
-  errors: string[];
+  onDelete: () => void; // Sadece index'siz silme fonksiyonu (OfferItemTable'da index ile çağrılacak)
+  setParentValue: UseFormSetValue<OfferFormData>;
+  triggerField: UseFormTrigger<OfferFormData>;
+  // formErrors?: FieldErrors<OfferLineItemFormData>; // Opsiyonel: Hataları toplu almak isterseniz
 }
 
-export default function ItemRow({ 
-  item, 
-  index, 
-  isApproved, 
-  onSave, 
-  onDelete, 
-  onUpdate,
-  isDraft,
-  isSaving,
-  errors 
+export default function ItemRow({
+  control,
+  index,
+  isApproved,
+  onDelete, // Direkt removeRow(index) çağrısını alan fonksiyon
+  setParentValue,
+  triggerField,
+  // formErrors // Kaldırıldı, Controller içinden alınacak
 }: ItemRowProps) {
-  const { control, handleSubmit, watch, setValue, formState: { errors: formErrors } } = useForm<ItemRowFormData>({
-    resolver: zodResolver(itemRowSchema),
-    defaultValues: item,
-    mode: 'onChange'
+
+  // İzlenecek alanları belirle (sadece hesaplama için gerekenler + materialServiceName)
+  const [
+      quantity, unitPrice, discountPercentage, discountUnit, kdv,
+      // Hesaplanan değerleri de izle (useEffect karşılaştırması için)
+      currentLineTotal, currentLineDiscount, currentLineVat, currentTotalPrice,
+      materialServiceName // Silme onayı için
+  ] = useWatch({
+      control,
+      name: [
+          `items.${index}.quantity`, `items.${index}.unitPrice`,
+          `items.${index}.discountPercentage`, `items.${index}.discountUnit`, `items.${index}.kdv`,
+          `items.${index}.lineTotal`, `items.${index}.lineDiscount`, `items.${index}.lineVat`, `items.${index}.totalPrice`,
+          `items.${index}.materialServiceName`
+      ]
   });
 
-  // Watch all fields for calculations
-  const watchedFields = watch();
+  // Sayı formatlama
+  const formatNumber = (value: any): string => {
+      const num = Number(value);
+      return (isNaN(num) ? 0 : num).toFixed(2);
+  };
 
-  // Calculate totals when values change
-  React.useEffect(() => {
-    const { quantity, unitPrice, discountPercentage, kdv } = watchedFields;
-    
-    // Ara toplam hesapla
-    const lineTotal = quantity * unitPrice;
-    
-    // İndirim hesapla
-    const lineDiscount = lineTotal * (discountPercentage / 100);
-    
-    // KDV hesapla
-    const lineVat = (lineTotal - lineDiscount) * kdv;
-    
-    // Toplam fiyat hesapla
-    const totalPrice = lineTotal - lineDiscount + lineVat;
-    
-    // Hesaplanan değerleri güncelle
-    setValue('lineTotal', lineTotal);
-    setValue('lineDiscount', lineDiscount);
-    setValue('lineVat', lineVat);
-    setValue('totalPrice', totalPrice);
-    
-    // Parent component'e güncellenmiş veriyi gönder
-    onUpdate(index, {
-      ...watchedFields,
-      lineTotal,
-      lineDiscount,
-      lineVat,
-      totalPrice
-    });
-  }, [watchedFields.quantity, watchedFields.unitPrice, watchedFields.discountPercentage, watchedFields.kdv, setValue, index, onUpdate, watchedFields]);
+  // Hesaplamalar ve Ana Formu Güncelleme
+  useEffect(() => {
+    const numQuantity = Number(quantity) || 0;
+    const numUnitPrice = Number(unitPrice) || 0;
+    const numDiscountPercentage = Number(discountPercentage) || 0;
+    const numDiscountUnit = Number(discountUnit) || 0;
+    const numKdv = Number(kdv) || 0.18;
 
-  const onSubmit = (data: ItemRowFormData) => {
-    onSave(index, data);
+    const newLineTotal = numQuantity * numUnitPrice;
+    const newLineDiscount = newLineTotal * (numDiscountPercentage / 100) + numDiscountUnit;
+    const baseForVat = Math.max(0, newLineTotal - newLineDiscount);
+    const newLineVat = baseForVat * numKdv;
+    const newTotalPrice = baseForVat + newLineVat;
+
+    // Sadece değişen hesaplanmış alanları ana forma yaz
+    if (currentLineTotal !== newLineTotal) {
+      setParentValue(`items.${index}.lineTotal`, newLineTotal, { shouldValidate: false, shouldDirty: true, shouldTouch: true });
+    }
+    if (currentLineDiscount !== newLineDiscount) {
+      setParentValue(`items.${index}.lineDiscount`, newLineDiscount, { shouldValidate: false, shouldDirty: true, shouldTouch: true });
+    }
+    if (currentLineVat !== newLineVat) {
+      setParentValue(`items.${index}.lineVat`, newLineVat, { shouldValidate: false, shouldDirty: true, shouldTouch: true });
+    }
+    if (currentTotalPrice !== newTotalPrice) {
+      setParentValue(`items.${index}.totalPrice`, newTotalPrice, { shouldValidate: false, shouldDirty: true, shouldTouch: true });
+    }
+
+  }, [
+    quantity, unitPrice, discountPercentage, discountUnit, kdv, // İzlenen inputlar
+    index, setParentValue, // Sabit veya stabil referanslar
+    // Hesaplanan değerleri de ekleyerek karşılaştırma için useEffect'in tekrar çalışmasını sağla
+    currentLineTotal, currentLineDiscount, currentLineVat, currentTotalPrice
+  ]);
+
+
+  // Satır Validasyonu
+  const handleRowValidate = async () => { /* ... önceki haliyle aynı ... */ };
+
+  // Satır Silme (Onay ve Bildirim ile)
+  const handleRowDelete = () => {
+    const itemName = materialServiceName || 'İsimsiz';
+    if (window.confirm(`Satır ${index + 1}: "${itemName}" silinecek. Emin misiniz?`)) {
+      onDelete(); // Parent'tan gelen removeRow(index)'i çağıracak
+      toast.info(`Satır ${index + 1} silindi.`);
+    }
   };
 
   return (
     <>
-      <tr>
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <Controller
-            name="itemType"
-            control={control}
-            render={({ field }) => (
-              <select
-                {...field}
-                disabled={isApproved}
-                className="w-full"
-              >
-                <option value="Malzeme">Malzeme</option>
-                <option value="Hizmet">Hizmet</option>
-              </select>
+      <tr className="hover:bg-gray-50 text-sm">
+        {/* Tür */}
+        <td className="border-b border-slate-200 p-2 align-top">
+           <Controller name={`items.${index}.itemType`} control={control} render={({ field }) => ( <select {...field} disabled={isApproved} className="w-full border rounded px-2 py-1 text-xs"> <option value="Malzeme">Malzeme</option> <option value="Hizmet">Hizmet</option> </select> )}/>
+        </td>
+        {/* Ad */}
+        <td className="border-b border-slate-200 p-2 align-top">
+          <Controller name={`items.${index}.materialServiceName`} control={control}
+            render={({ field, fieldState: { error } }) => (
+              <div> {/* Hata mesajını alta almak için div */}
+                <input {...field} type="text" disabled={isApproved} className={`w-full border rounded px-2 py-1 ${error ? 'border-red-500' : 'border-gray-300'}`} placeholder="Ad giriniz" />
+                {error && <span className="text-red-500 text-xs block mt-1">{error.message}</span>}
+              </div>
             )}
           />
         </td>
-
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <Controller
-            name="materialServiceName"
-            control={control}
-            render={({ field }) => (
-              <input
-                {...field}
-                type="text"
-                disabled={isApproved}
-                className="w-full"
-                placeholder="Ad giriniz"
-              />
+        {/* Miktar */}
+        <td className="border-b border-slate-200 p-2 align-top">
+           <Controller name={`items.${index}.quantity`} control={control}
+            render={({ field, fieldState: { error } }) => (
+              <div>
+                <input {...field} value={field.value ?? ''} type="number" min={0.01} step="any" disabled={isApproved} className={`w-20 border rounded px-2 py-1 text-right ${error ? 'border-red-500' : 'border-gray-300'}`} placeholder="0" onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+                {error && <span className="text-red-500 text-xs block mt-1">{error.message}</span>}
+              </div>
             )}
           />
         </td>
-
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <Controller
-            name="quantity"
-            control={control}
-            render={({ field }) => (
-              <input
-                {...field}
-                type="number"
-                min={0.01}
-                step={0.01}
-                disabled={isApproved}
-                className="w-full"
-                placeholder="0"
-                onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-              />
+         {/* Birim Fiyat */}
+        <td className="border-b border-slate-200 p-2 align-top">
+           <Controller name={`items.${index}.unitPrice`} control={control}
+            render={({ field, fieldState: { error } }) => (
+              <div>
+                <input {...field} value={field.value ?? ''} type="number" min={0} step="any" disabled={isApproved} className={`w-24 border rounded px-2 py-1 text-right ${error ? 'border-red-500' : 'border-gray-300'}`} placeholder="0" onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+                {error && <span className="text-red-500 text-xs block mt-1">{error.message}</span>}
+              </div>
             )}
           />
         </td>
-
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <Controller
-            name="unitPrice"
-            control={control}
-            render={({ field }) => (
-              <input
-                {...field}
-                type="number"
-                min={0}
-                step={0.01}
-                disabled={isApproved}
-                className="w-full"
-                placeholder="0"
-                onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-              />
+        {/* Ara Toplam (Hesaplanan) */}
+        <td className="border-b border-slate-200 p-2 align-top text-right pr-2">
+          {formatNumber(currentLineTotal)}
+        </td>
+        {/* İndirim (%) */}
+        <td className="border-b border-slate-200 p-2 align-top">
+          <Controller name={`items.${index}.discountPercentage`} control={control}
+            render={({ field, fieldState: { error } }) => (
+              <div>
+                <input {...field} value={field.value ?? ''} type="number" min={0} max={100} step={1} disabled={isApproved} className={`w-16 border rounded px-2 py-1 text-right ${error ? 'border-red-500' : 'border-gray-300'}`} placeholder="0" onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+                {error && <span className="text-red-500 text-xs block mt-1">{error.message}</span>}
+               </div>
             )}
           />
         </td>
-
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <input
-            type="number"
-            value={watchedFields.lineTotal || 0}
-            disabled
-            className="w-full bg-gray-100"
-          />
-        </td>
-
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <Controller
-            name="discountPercentage"
-            control={control}
-            render={({ field }) => (
-              <input
-                {...field}
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                disabled={isApproved}
-                className="w-full"
-                placeholder="0"
-                onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-              />
+        {/* İndirim (Birim) */}
+        <td className="border-b border-slate-200 p-2 align-top">
+          <Controller name={`items.${index}.discountUnit`} control={control}
+            render={({ field, fieldState: { error } }) => (
+              <div>
+                <input {...field} value={field.value ?? ''} type="number" min={0} step="any" disabled={isApproved} className={`w-20 border rounded px-2 py-1 text-right ${error ? 'border-red-500' : 'border-gray-300'}`} placeholder="0" onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+                {error && <span className="text-red-500 text-xs block mt-1">{error.message}</span>}
+              </div>
             )}
           />
         </td>
-
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <Controller
-            name="discountUnit"
-            control={control}
-            render={({ field }) => (
-              <input
-                {...field}
-                type="number"
-                min={0}
-                step={0.01}
-                disabled={isApproved}
-                className="w-full"
-                placeholder="0"
-                onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-              />
-            )}
-          />
+         {/* İndirim Toplamı (Hesaplanan) */}
+        <td className="border-b border-slate-200 p-2 align-top text-right pr-2">
+           {formatNumber(currentLineDiscount)}
         </td>
-
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <input
-            type="number"
-            value={watchedFields.lineDiscount || 0}
-            disabled
-            className="w-full bg-gray-100"
-          />
+        {/* KDV */}
+        <td className="border-b border-slate-200 p-2 align-top text-center">
+          <Controller name={`items.${index}.kdv`} control={control}
+            render={({ field }) => ( <select {...field} disabled={isApproved} className="w-full border rounded px-1 py-1 text-xs" value={field.value ?? 0.18} onChange={(e) => field.onChange(Number(e.target.value))}> <option value={0.08}>8%</option> <option value={0.18}>18%</option> <option value={0.20}>20%</option> </select> )}/>
         </td>
-
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <Controller
-            name="kdv"
-            control={control}
-            render={({ field }) => (
-              <select
-                {...field}
-                disabled={isApproved}
-                className="w-full"
-                onChange={(e) => field.onChange(Number(e.target.value))}
-              >
-                <option value={0.08}>8%</option>
-                <option value={0.18}>18%</option>
-                <option value={0.20}>20%</option>
-              </select>
-            )}
-          />
+        {/* KDV Toplamı (Hesaplanan) */}
+        <td className="border-b border-slate-200 p-2 align-top text-right pr-2">
+           {formatNumber(currentLineVat)}
         </td>
-
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <input
-            type="number"
-            value={watchedFields.lineVat || 0}
-            disabled
-            className="w-full bg-gray-100"
-          />
+        {/* Toplam (Hesaplanan) */}
+        <td className="border-b border-slate-200 p-2 align-top text-right pr-2 font-semibold">
+          {formatNumber(currentTotalPrice)}
         </td>
-
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <input
-            type="number"
-            value={watchedFields.totalPrice || 0}
-            disabled
-            className="w-full bg-gray-100"
-          />
-        </td>
-
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <button
-            type="button"
-            onClick={handleSubmit(onSubmit)}
-            disabled={isApproved || !isDraft || isSaving}
-            className={`px-3 py-1 rounded-md text-sm font-medium ${
-              isDraft 
-                ? 'bg-green-500 text-white hover:bg-green-600' 
-                : 'bg-gray-300 text-gray-600 cursor-not-allowed'
-            } disabled:bg-gray-400 disabled:cursor-not-allowed`}
-            title={isDraft ? "Satırı Kaydet" : "Satır Kaydedildi"}
-          >
-            {isSaving ? 'Kaydediliyor...' : isDraft ? 'Kaydet' : 'Kaydedildi'}
-          </button>
-        </td>
-
-        <td className="border border-slate-200 p-2 text-center align-middle">
-          <button
-            type="button"
-            onClick={() => onDelete(index)}
-            disabled={isApproved}
-            className="bg-red-500 text-white border-0 px-2.5 py-1 rounded-md cursor-pointer text-[16px] font-bold min-w-8 h-8 flex items-center justify-center hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            title="Satırı Sil"
-          >
-            ×
-          </button>
+        {/* İşlemler */}
+        <td className="border-b border-slate-200 p-2 align-top text-center">
+          <div className="flex gap-1 justify-center">
+           
+            {/* Sil Butonu */}
+            {!isApproved && ( <button type="button" onClick={handleRowDelete} className="p-1 text-red-600 hover:text-red-800" title="Satırı Sil"> <svg className="w-5 h-1"  /> Sil</button> )}
+          </div>
         </td>
       </tr>
-
-      {/* Form validation errors */}
-      {Object.keys(formErrors).length > 0 && (
-        <tr>
-          <td colSpan={12} className="border border-red-300 bg-red-50 p-2">
-            <div className="text-red-600 text-sm">
-              {Object.entries(formErrors).map(([field, error]) => (
-                <div key={field}>• {field}: {error?.message}</div>
-              ))}
-            </div>
-          </td>
-        </tr>
-      )}
-
-      {/* Custom errors */}
-      {errors.length > 0 && (
-        <tr>
-          <td colSpan={12} className="border border-red-300 bg-red-50 p-2">
-            <div className="text-red-600 text-sm">
-              {errors.map((error, errorIndex) => (
-                <div key={errorIndex}>• {error}</div>
-              ))}
-            </div>
-          </td>
-        </tr>
-      )}
+      {/* Hata mesajları artık Controller içinde render ediliyor */}
     </>
   );
 }
