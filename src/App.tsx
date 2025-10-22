@@ -19,7 +19,7 @@ function App() {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="colored" // Renkli bildirimler için (success=yeşil, error=kırmızı vs.)
+        theme="colored" // Renkli bildirimler için 
       />
       
       <Routes>

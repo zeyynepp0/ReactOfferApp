@@ -1,6 +1,6 @@
 // src/components/NewOfferModal.tsx
-import { useEffect, useMemo, useRef } from "react";
-import { useForm, useFieldArray, type UseFormTrigger, type FieldErrors } from "react-hook-form";
+import { useEffect, useMemo } from "react";
+import { useForm, useFieldArray, type UseFormTrigger, type FieldErrors, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { offerSchema, type OfferFormData, type OfferLineItemFormData } from '../schemas/validationSchemas';
 import Input from "./Input";
@@ -13,6 +13,8 @@ import type { OfferItem, OfferLineItem } from "../redux/offersSlice";
 import { computeTotals } from "../utils/offerCalculations";
 import type { RootState } from "../redux/store";
 import { toast } from 'react-toastify';
+import ButtonInput from "./ButtonInput";
+import Test from "./Test";
 
 interface NewOfferModalProps {
   setModalOpen: (value: boolean) => void;
@@ -22,6 +24,8 @@ interface NewOfferModalProps {
 const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => {
   const dispatch = useDispatch();
 
+
+  //react-hook-form kütüphanesinin ana hook'udur ve formunun tüm durumunu (state) yönetir.
   const {
     register,
     handleSubmit,
@@ -44,24 +48,27 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
     keyName: "fieldId"
   });
 
-  const offerToEdit = useSelector((state: RootState) =>
+  const offerToEdit = useSelector((state: RootState) => //react-redux kütüphanesinden gelen bir hook'tur ve Redux'taki global state'ten veri okumanı sağlar.
     editingOfferId ? state.offers.offers.find(offer => offer.id === editingOfferId) : undefined
   );
 
   const currentOfferStatus = watch("offerStatus");
   const isReadOnly = useMemo(() => currentOfferStatus === 'Onaylandı', [currentOfferStatus]);
-  const prevStatusRef = useRef<OfferFormData['offerStatus'] | undefined>(undefined);
-  
+
+  useEffect(() => {
+    if (offerToEdit?.offerStatus === 'Onaylandı') {
+      toast.info("Bu teklif onaylandığı için düzenlenemez.", { autoClose: 500 });
+    }
+  }, [])
   // Formu yükleme/sıfırlama
   useEffect(() => {
     if (offerToEdit) {
       reset(offerToEdit);
-      prevStatusRef.current = offerToEdit.offerStatus;
-      if (offerToEdit.offerStatus === 'Onaylandı') {
-        toast.info("Bu teklif onaylandığı için düzenlenemez.", { autoClose: 5000 });
-      }
+      // Ref kontrolü: Sadece durum Onaylandı ise VE bu ID için bildirim daha önce gösterilmediyse göster
+
+
     } else {
-       const initialValues = {
+      const initialValues = {
         id: undefined, customerName: '', offerName: '',
         offerDate: new Date().toISOString().split('T')[0],
         offerStatus: 'Taslak' as const,
@@ -69,7 +76,6 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
         subTotal: 0, discountTotal: 0, vatTotal: 0, grandTotal: 0, isActive: true
       };
       reset(initialValues);
-      prevStatusRef.current = initialValues.offerStatus;
     }
   }, [editingOfferId, offerToEdit, reset]);
 
@@ -85,50 +91,6 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
     setValue("grandTotal", grandTotal, { shouldValidate: false });
   }, [watchedItems, setValue]);
 
-  // Onaylama durumunu Redux'a kaydetme
-   useEffect(() => {
-      // Sadece durum 'Onaylandı'ya değiştiğinde tetiklen
-      if (currentOfferStatus === 'Onaylandı' && prevStatusRef.current !== 'Onaylandı') {
-          const currentFormData = getValues();
-          const filledItems = currentFormData.items.filter(item => item.materialServiceName && item.materialServiceName.trim() !== '');
-          
-          if (currentFormData.items.length !== filledItems.length) {
-              toast.warn(`Onaylama sırasında boş satırlar çıkarıldı.`);
-          }
-          if (filledItems.length === 0) {
-             toast.error("Onaylanamadı! Teklifte geçerli satır bulunmuyor.");
-             // Durumu eski haline getir
-             setValue('offerStatus', prevStatusRef.current || 'Taslak', { shouldDirty: true });
-             return;
-          }
-          
-          const calculatedTotals = computeTotals(filledItems as OfferLineItem[]);
-          const finalOffer: OfferItem = {
-              ...currentFormData,
-              id: editingOfferId || uuidv4(),
-              isActive: true,
-              items: filledItems.map(item => ({
-                ...(item as OfferLineItemFormData),
-                discountAmount: item.discountAmount ?? 0,
-                itemId: item.itemId || uuidv4(),
-                isActiveLine: item.isActiveLine ?? true
-              })) as OfferLineItem[],
-              subTotal: calculatedTotals.subTotal,
-              discountTotal: calculatedTotals.discountTotal,
-              vatTotal: calculatedTotals.vatTotal,
-              grandTotal: calculatedTotals.grandTotal,
-              offerStatus: 'Onaylandı'
-          };
-          
-          if (editingOfferId) {
-              dispatch(updateOffer(finalOffer));
-          } else {
-              dispatch(addOffer(finalOffer));
-          }
-      }
-      // Önceki durumu güncelle
-      prevStatusRef.current = currentOfferStatus;
-  }, [currentOfferStatus, dispatch, editingOfferId, getValues, setValue]);
 
   // Ana Kaydet/Güncelle butonu
   const onSubmit = (data: OfferFormData) => {
@@ -139,15 +101,15 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
 
     // Sadece adı girilmiş satırları kaydet
     const filledItems = data.items.filter(item => item.materialServiceName && item.materialServiceName.trim() !== '');
-    
+
     if (filledItems.length === 0) {
-       toast.error("Kaydedilemedi. Lütfen en az bir geçerli satır ekleyin.");
-       return;
+      toast.error("Kaydedilemedi. Lütfen en az bir geçerli satır ekleyin.");
+      return;
     }
 
     // Toplamları son kez utils ile hesapla
     const calculatedTotals = computeTotals(filledItems as OfferLineItem[]);
-    
+
     const finalOffer: OfferItem = {
       ...data,
       id: editingOfferId || uuidv4(),
@@ -163,7 +125,7 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
       vatTotal: calculatedTotals.vatTotal,
       grandTotal: calculatedTotals.grandTotal,
     };
-    
+
     if (editingOfferId) {
       dispatch(updateOffer(finalOffer));
       toast.success("Teklif başarıyla güncellendi!");
@@ -177,8 +139,8 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
   // Silme
   const handleDelete = () => {
     if (isReadOnly) {
-       toast.warn("Onaylanmış teklifler silinemez!");
-       return;
+      toast.warn("Onaylanmış teklifler silinemez!");
+      return;
     }
     if (editingOfferId && window.confirm('Bu teklifi kalıcı olarak silmek istediğinizden emin misiniz? (Pasif hale getirilecek)')) {
       dispatch(deleteOffer(editingOfferId));
@@ -190,8 +152,8 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
   // Satır ekleme
   const handleAddRow = () => {
     if (isReadOnly) {
-        toast.warn("Onaylanmış teklife yeni satır eklenemez.");
-        return;
+      toast.warn("Onaylanmış teklife yeni satır eklenemez.");
+      return;
     }
     const newItem: OfferLineItemFormData = {
       itemId: uuidv4(), itemType: 'Malzeme', materialServiceName: '',
@@ -206,31 +168,42 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
   // Satır silme
   const handleRemoveRow = (index: number) => {
     if (isReadOnly) {
-        toast.warn("Onaylanmış tekliften satır silinemez.");
-        return;
+      toast.warn("Onaylanmış tekliften satır silinemez.");
+      return;
     }
     remove(index);
   };
 
+  const onStatusChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, onChange: (...event: any[]) => void) => {
+    const newValue = e.target.value as OfferFormData['offerStatus'];
+    if (newValue === "Onaylandı" && watch("items")?.length === 0) {
+      toast.error("Onaylanamadı! Teklifte geçerli satır bulunmuyor.");
+      return;
+    }
+    if (newValue === "Onaylandı") {
+      handleSubmit(onSubmit)(e)
+      return;
+    }
+    onChange(e)
+  }
+
   return (
-     <div className="fixed inset-0 w-full h-full bg-black/50 flex justify-center items-center z-[1000] p-4">
+    <div className="fixed inset-0 w-full h-full bg-black/50 flex justify-center items-center z-[1000] p-4">
       <div className="bg-white p-6 rounded-xl w-full max-w-7xl max-h-[95vh] flex flex-col shadow-lg">
         {/* Modal Başlığı */}
         <div className="flex justify-between items-center mb-4 flex-shrink-0">
-            <h3 className="text-xl font-semibold">
-              {editingOfferId ? 'Teklif Düzenle' : 'Yeni Teklif Ekle'}
-              {isReadOnly && <span className="text-sm font-normal text-yellow-600 ml-2">(Onaylandı - Değişiklik yapılamaz)</span>}
-            </h3>
-            <button type="button" onClick={() => setModalOpen(false)} className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
-            </button>
+          <h3 className="text-xl font-semibold">
+            {editingOfferId ? 'Teklif Düzenle' : 'Yeni Teklif Ekle'}
+            {isReadOnly && <span className="text-sm font-normal text-yellow-600 ml-2">(Onaylandı - Değişiklik yapılamaz)</span>}
+          </h3>
+
         </div>
 
         {/* Hata Durumu Göstergesi */}
         {Object.keys(formErrors).length > 0 && !formErrors.items && (
-             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
-                 Lütfen işaretli alanları kontrol edin.
-            </div>
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
+            Lütfen işaretli alanları kontrol edin.
+          </div>
         )}
 
         {/* Form */}
@@ -241,36 +214,24 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
             <Input label="Müşteri Adı" {...register("customerName")} error={formErrors.customerName?.message} disabled={isReadOnly} />
             <Input label="Teklif Adı" {...register("offerName")} error={formErrors.offerName?.message} disabled={isReadOnly} />
             <Input label="Tarih" type="date" {...register("offerDate")} error={formErrors.offerDate?.message} disabled={isReadOnly} />
-            <Input label="Teklif Durumu" type="select"
-              options={[
-                { label: "Taslak", value: "Taslak" },
-                { label: "Onay Bekliyor", value: "Onay Bekliyor" },
-                { label: "Onaylandı", value: "Onaylandı" },
-              ]}
-              {...register("offerStatus", {
-                  onChange: (e) => {
-                      const newValue = e.target.value as OfferFormData['offerStatus'];
-                      const currentValue = getValues("offerStatus");
-                      // Sadece 'Onaylandı'ya geçerken uyar
-                      if (newValue === 'Onaylandı' && currentValue !== 'Onaylandı') {
-                          if (window.confirm("Teklifi 'Onaylandı' olarak işaretlemek istediğinize emin misiniz?\n\nBu işlem geri alınamaz ve teklif üzerinde DEĞİŞİKLİK YAPILAMAZ!")) {
-                              // Değeri RHF'e kaydet, bu useEffect'i tetikleyecek
-                              setValue('offerStatus', newValue, { shouldDirty: true });
-                              toast.success("Teklif onaylandı ve düzenlemeye kapatıldı.");
-                          } else {
-                              // Kullanıcı iptal ederse, formu eski status değerine geri döndür
-                              reset({ ...getValues(), offerStatus: currentValue });
-                              toast.info("Onaylama işlemi iptal edildi.");
-                          }
-                      }
-                      // Diğer durum değişiklikleri (örn: Taslak -> Onay Bekliyor) için setValue
-                      else if (newValue !== 'Onaylandı') {
-                        setValue('offerStatus', newValue, { shouldDirty: true });
-                      }
-                  }
-              })}
-              error={formErrors.offerStatus?.message}
-              disabled={isReadOnly} // Onaylandıysa hep kilitli
+            <Controller
+              control={control}
+              name="offerStatus"
+              render={({ field: { value, onChange }, fieldState: { error } }) => (
+                <Input label="Teklif Durumu" type="select"
+                  options={[
+                    { label: "Taslak", value: "Taslak" },
+                    { label: "Onay Bekliyor", value: "Onay Bekliyor" },
+                    { label: "Onaylandı", value: "Onaylandı" },
+                  ]}
+                  value={value}
+                  onChange={(e) => {
+                    onStatusChange(e, onChange)
+                  }}
+                  error={error?.message}
+                  disabled={isReadOnly}
+                />
+              )}
             />
           </div>
 
@@ -290,29 +251,29 @@ const NewOfferModal = ({ setModalOpen, editingOfferId }: NewOfferModalProps) => 
 
           {/* Toplamlar ve Butonlar */}
           <div className="flex-shrink-0 pt-4 border-t mt-4">
-             <TotalsSummary
-               subTotal={watch("subTotal")}
-               discountTotal={watch("discountTotal")}
-               vatTotal={watch("vatTotal")}
-               grandTotal={watch("grandTotal")}
-             />
-             <div className="flex justify-end gap-3 pt-5">
-                 {/* Sadece 'Onaylandı' DEĞİLSE kaydet/güncelle butonlarını göster */}
-                 {!isReadOnly && (
-                     <button type="submit" disabled={isSubmitting} className="bg-pink-600 text-white px-5 py-2 rounded-lg hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2">
-                       {editingOfferId ? 'Güncelle' : 'Kaydet'}
-                     </button>
-                 )}
-                 {/* Sadece 'Onaylandı' DEĞİLSE ve DÜZENLEME modundaysa Sil butonunu göster */}
-                 {!isReadOnly && editingOfferId && (
-                     <button type="button" onClick={handleDelete} className="bg-red-500 text-white px-5 py-2 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
-                       Sil
-                     </button>
-                 )}
-                 <button type="button" onClick={() => setModalOpen(false)} className="bg-gray-500 text-white px-5 py-2 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                   Kapat
-                 </button>
-             </div>
+            <TotalsSummary
+              subTotal={watch("subTotal")}
+              discountTotal={watch("discountTotal")}
+              vatTotal={watch("vatTotal")}
+              grandTotal={watch("grandTotal")}
+            />
+            <div className="flex justify-end gap-3 pt-5">
+
+              {!isReadOnly && (
+                <button type="submit" disabled={isSubmitting} className="bg-pink-600 text-white px-5 py-2 rounded-lg hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2">
+                  {editingOfferId ? 'Güncelle' : 'Kaydet'}
+                </button>
+              )}
+
+              {!isReadOnly && editingOfferId && (
+                <button type="button" onClick={handleDelete} className="bg-red-500 text-white px-5 py-2 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                  Sil
+                </button>
+              )}
+              <button type="button" onClick={() => setModalOpen(false)} className="bg-gray-500 text-white px-5 py-2 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                Kapat
+              </button>
+            </div>
           </div>
         </form>
       </div>
