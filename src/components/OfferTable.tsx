@@ -34,10 +34,12 @@ const OfferTable: React.FC<OfferTableProps> = ({ setEditingOfferId }) => {
     {
       header: 'Müşteri Adı',
       fieldKey: 'customerName', 
+      //enableSearch: true,
     },
     {
       header: 'Teklif Adı',
       fieldKey: 'offerName', 
+      //enableSearch: true,
     },
     {
       header: 'Durum',
@@ -52,6 +54,7 @@ const OfferTable: React.FC<OfferTableProps> = ({ setEditingOfferId }) => {
           {row.offerStatus}
         </span>
       ),
+      sortKey: 'offerStatus',
     },
     {
       header: 'Tarih',
@@ -60,7 +63,8 @@ const OfferTable: React.FC<OfferTableProps> = ({ setEditingOfferId }) => {
     {
       header: 'Toplam Tutar',
       // Toplam tutarı formatlayarak gösterelim
-      fieldKey: (row) => `${row.grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`
+      fieldKey: (row) => `${row.grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`,
+      sortKey: 'grandTotal',
     },
     {
       header: 'İşlemler',

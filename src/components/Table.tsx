@@ -6,6 +6,7 @@ import { FiArrowUp } from "react-icons/fi";
 export interface ColumnDef<T> {
   header: string;
   fieldKey: keyof T | ((row: T, index: number) => React.ReactNode);
+  sortKey?: keyof T;
 }
 
 interface TableProps<T> {
@@ -26,6 +27,7 @@ export function Table<T extends { id: string | number }>(props: TableProps<T>) {
     
   // State'ler
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchColumnTerm, setSearchColumnTerm] = useState('');
   const [inputValue, setInputValue] = useState(''); // Input'un anlık değerini tutar
   const timerRef = useRef<number | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: keyof T | null; direction: 'asc' | 'desc' }>({
@@ -33,23 +35,30 @@ export function Table<T extends { id: string | number }>(props: TableProps<T>) {
       direction: 'asc',
   });  
 
-  // --- Sıralama Tetikleyicisi ---
-  const handleSort = (key: keyof T | ((row: T, index: number) => React.ReactNode)) => {
-      // Fonksiyon olan sütunlar (örn: buton) sıralanamaz
-      if (typeof key === 'function') return; 
 
-      setSortConfig((prev) => {
-          if (prev.key === key) {
-            // Aynı sütuna tıklandıysa yönü değiştir
-            return {
-                key,
-                direction: prev.direction === 'asc' ? 'desc' : 'asc',
-            };
-          }
-          // Yeni bir sütuna tıklandıysa 'asc' ile başla
-          return { key, direction: 'asc' };
-     });
-  };
+
+//Sıralama Tetikleyicisi 
+const handleSort = (col: ColumnDef<T>) => { // <-- Parametreyi 'key' yerine 'col' objesi olarak değiştirin
+    
+    // Sıralama için kullanılacak anahtarı belirle: Önce sortKey'e bak,
+    // o yoksa ve fieldKey string ise fieldKey'i kullan.
+    const keyToSortBy = col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null);
+
+    // Sıralanacak bir anahtar bulunamazsa (örn: fieldKey fonksiyon ve sortKey yoksa) işlemi durdur
+    if (keyToSortBy === null) return; 
+
+    setSortConfig((prev) => {
+        if (prev.key === keyToSortBy) { // keyToSortBy değişkenini kullan
+          // Aynı sütuna tıklandıysa yönü değiştir
+          return {
+              key: keyToSortBy, // keyToSortBy değişkenini kullan
+              direction: prev.direction === 'asc' ? 'desc' : 'asc',
+          };
+        }
+        // Yeni bir sütuna tıklandıysa 'asc' ile başla
+        return { key: keyToSortBy, direction: 'asc' }; // keyToSortBy değişkenini kullan
+   });
+};
 
   // Arama (Filtreleme) Mantığı 
   // Sadece searchTerm, data veya columns değiştiğinde yeniden hesaplanır.
@@ -157,13 +166,20 @@ export function Table<T extends { id: string | number }>(props: TableProps<T>) {
                       {columns.map((col, index) => (
                           <th key={`${col.header}-${index}`} 
                               className="bg-slate-200 p-3 text-left font-semibold cursor-pointer select-none" // select-none eklendi
-                              onClick={() => handleSort(col.fieldKey)}>
+                              onClick={() => handleSort(col)}>
                               
-                              <div className="flex items-center space-x-1"> {/* İkon ve metni hizalamak için div */}
+                              <div className="flex flex-col space-y-1"> {/* İkon ve metni hizalamak için div */}
                                 <span>{col.header}</span>
+                                <input
+                                    className="border border-gray-300 rounded-md p-3 w-full focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-400 text-sm mb-4"
+                                    type="text"
+                                    placeholder="Ara..."
+                                    value={inputValue}
+                                    onChange={ handleInputChange }
+                                />
                                 {/* Aktif sıralama ikonu */}
-                                {sortConfig.key === col.fieldKey && (
-                                    sortConfig.direction === 'asc' 
+                                {sortConfig.key === (col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null)) && (
+                            sortConfig.direction === 'asc' 
                                         ? <FiArrowUp className="text-gray-600" /> 
                                         : <FiArrowDown className="text-gray-600" />
                                 )}
