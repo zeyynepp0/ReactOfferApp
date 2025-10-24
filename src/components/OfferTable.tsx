@@ -79,6 +79,8 @@ const OfferTable: React.FC<OfferTableProps> = ({ setEditingOfferId }) => {
       header: 'Toplam Tutar',
       fieldKey: (row) => `${row.grandTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`,
       sortKey: 'grandTotal',
+      filterKey: 'grandTotal', 
+      filterType: 'number',
       
     },
     {

@@ -11,7 +11,7 @@ export interface ColumnDef<T> {
   sortKey?: keyof T;
 
   filterKey?: keyof T;       // Hangi alan filtrelenecek
-  filterType?: 'text' | 'date' | 'select'; // Filtre tipi
+  filterType?: 'text' | 'date' | 'select'| "number"; // Filtre tipi
 }
 
 interface TableProps<T> {
@@ -48,13 +48,10 @@ interface TableProps<T> {
   | {
       start?: string;
       end?: string;
+      min?:number;
+      max?:number;
     };
 const [filters, setFilters] = useState<Record<string, FilterValue>>({});
-//const [startDate, setStartDate] = useState<string>("");
-//const [endDate, setEndDate] = useState<string>("");
-//const [openDateDropdown, setOpenDateDropdown] = useState(false);
-
-
 
 
 
@@ -84,7 +81,8 @@ const handleSort = (col: ColumnDef<T>) => { // <-- Parametreyi 'key' yerine 'col
   
 const filteredData = useMemo(() => {
   return data.filter((row) => {
-    //  Genel arama: satırdaki herhangi bir değer searchTerm'i içeriyor mu?
+
+    //  Genel arama: satırdaki herhangi bir değer searchTerm'i içeriyor mu
     const matchesGlobalSearch = searchTerm
       ? columns.some((col) => {
           if (typeof col.fieldKey === 'function') return false;
@@ -95,6 +93,7 @@ const filteredData = useMemo(() => {
         })
       : true; // searchTerm boşsa tüm satırlar geçer
 
+
     //Kolon bazlı filtreleme
     const matchesColumnFilters = columns.every((col) => {
       const key = col.filterKey as string;
@@ -103,11 +102,7 @@ const filteredData = useMemo(() => {
 
        const cellValue = row[key as keyof T];
   
-     // bunu kullanırsan seçimden sonra null dönüyor ve hatab oluşturuyor
-        // Çoklu seçim: bir dizide var mı diye kontrol et 
-         /*  if (Array.isArray(value)) {
-          return value.includes(String(cellValue));
-        } */
+     
     
         if (col.filterType === 'select') {
          if (Array.isArray(value)) {
@@ -118,7 +113,32 @@ const filteredData = useMemo(() => {
          return true; 
       }
       
-      
+if (col.filterType === 'number') {
+            const minFilterKey = `${key}_min`;
+            const maxFilterKey = `${key}_max`;
+
+            const minStr = filters[minFilterKey] as string | undefined;
+            const maxStr = filters[maxFilterKey] as string | undefined;
+
+            // Satır değerini sayıya dönüştür
+            const cellNumValue = Number(row[key as keyof T]);
+
+            // Filtre değerlerini parse et, boş stringleri -Infinity veya Infinity olarak ayarla
+            // Bu sayede sadece bir limit girilse bile doğru çalışır
+            const minVal = (minStr && minStr.trim() !== '') ? Number(minStr) : -Infinity;
+            const maxVal = (maxStr && maxStr.trim() !== '') ? Number(maxStr) : Infinity;
+
+            // Eğer hiç filtre girilmemişse (varsayılan değerler -Infinity ve Infinity)
+            if (minVal === -Infinity && maxVal === Infinity) return true;
+
+            // Geçersiz sayısal değerler için kontrol
+            if (isNaN(cellNumValue) || isNaN(minVal) || isNaN(maxVal)) return true;
+
+            // Filtreleme koşulu: hücre değeri [minVal, maxVal] aralığında olmalı
+            return cellNumValue >= minVal && cellNumValue <= maxVal;
+       }
+
+
 
         //Tarih filtrelemesi
         if (col.filterType === 'date') {
@@ -191,11 +211,6 @@ const filteredData = useMemo(() => {
     const sorted = [...filteredData].sort((a, b) => {
       const valueA = a[key as keyof T]; 
       const valueB = b[key as keyof T];
-
-      //  null veya undefined değerleri her zaman en sona at
-      //if (valueA == null && valueB == null) return 0;
-      //if (valueA == null) return 1;  // a sona gider
-      //if (valueB == null) return -1; // b sona gider
 
       let comparison = 0;
 
@@ -329,7 +344,28 @@ useEffect(() => {
             }
           />
         )}
-
+         {col.filterType==='number' && col.filterKey && (
+      <div className="flex space-x-2 mt-2">
+     <input
+      type="number"
+      className="border border-gray-300 rounded-lg p-2 w-1/2 text-sm focus:ring-pink-300 focus:border-pink-400"
+      value={(filters[`${String(col.filterKey)}_min`] as string | undefined) ?? ""}
+      onChange={(e) =>
+       handleColumnFilterChange(`${String(col.filterKey)}_min`, e.target.value)
+      }
+      placeholder="Min"
+     />
+     <input
+      type="number"
+      className="border border-gray-300 rounded-lg p-2 w-1/2 text-sm focus:ring-pink-300 focus:border-pink-400"
+      value={(filters[`${String(col.filterKey)}_max`] as string | undefined) ?? ""}
+      onChange={(e) =>
+       handleColumnFilterChange(`${String(col.filterKey)}_max`, e.target.value)
+      }
+      placeholder="Max"
+    />
+    </div>
+     )}
 {col.filterType === 'date' && (
   <div className="mt-2 space-y-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
     {/* Başlık */}
