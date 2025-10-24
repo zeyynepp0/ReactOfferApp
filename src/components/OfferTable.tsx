@@ -3,9 +3,11 @@
 import React from 'react';
 import { Table } from './Table';
 import type { ColumnDef } from './Table'; 
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../redux/store';
-import type { OfferItem } from '../redux/offersSlice';
+//import type { OfferItem } from '../redux/offersSlice';
+import { deleteOffer, type OfferItem } from '../redux/offersSlice';
+import { toast } from 'react-toastify'
 
 interface OfferTableProps {
   setEditingOfferId: (id: string | null) => void;
@@ -17,6 +19,14 @@ const OfferTable: React.FC<OfferTableProps> = ({ setEditingOfferId }) => {
   // 1. Redux'tan ham veriyi al
   const { offers } = useSelector((state: RootState) => state.offers);
   const activeOffers = offers.filter(o => o.isActive); 
+  const dispatch = useDispatch();
+
+  const handleDeleteClick = (offerId: string) => {
+    if (window.confirm('Bu teklifi silmek istediğinizden emin misiniz? (Pasif hale getirilecek)')) {
+      dispatch(deleteOffer(offerId));
+      toast.info("Teklif silindi (pasif hale getirildi).");
+    }
+  };
   
   // 2. Sütun Tanımları (Filtre prop'ları ile)
   // Table.tsx'e nasıl davranacağını bu konfigürasyon ile söylüyoruz
@@ -81,12 +91,24 @@ const OfferTable: React.FC<OfferTableProps> = ({ setEditingOfferId }) => {
           >
             Düzenle
           </button>
-          <button
+          {/* <button
             onClick={(e) => { e.stopPropagation(); console.log("Sil butonu tıklandı:", row.id); }}
             className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
           >
             Sil
+          </button> */}
+
+          {row.offerStatus !== 'Onaylandı' && (
+          <button
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              handleDeleteClick(row.id); // console.log yerine bu fonksiyon çağrıldı
+            }}
+            className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+          >
+            Sil
           </button>
+          )}
         </div>
       ),
       // filterKey yok, bu yüzden filtre render edilmez

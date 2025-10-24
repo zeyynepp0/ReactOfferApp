@@ -21,13 +21,7 @@ interface TableProps<T> {
   onRowClick?: (rowData: T) => void;
 }
 
-type FilterValue =
-  | string
-  | string[]
-  | {
-      start?: string;
-      end?: string;
-    };
+
 
 // Tablo Component'i
  export function Table<T extends { id: string | number }>(props: TableProps<T>) {
@@ -47,7 +41,15 @@ type FilterValue =
       key: null,
       direction: 'asc',
   });  
-const [filters, setFilters] = useState<Record<string, string | string[]>>({});
+
+  type FilterValue =
+  | string
+  | string[]
+  | {
+      start?: string;
+      end?: string;
+    };
+const [filters, setFilters] = useState<Record<string, FilterValue>>({});
 //const [startDate, setStartDate] = useState<string>("");
 //const [endDate, setEndDate] = useState<string>("");
 //const [openDateDropdown, setOpenDateDropdown] = useState(false);
@@ -100,17 +102,26 @@ const filteredData = useMemo(() => {
       if (!value) return true;
 
        const cellValue = row[key as keyof T];
-      /*if (col.filterType === 'date') { 
-        return String(cellValue).startsWith(value);
-        
-      } */
+  
+     // bunu kullanırsan seçimden sonra null dönüyor ve hatab oluşturuyor
+        // Çoklu seçim: bir dizide var mı diye kontrol et 
+         /*  if (Array.isArray(value)) {
+          return value.includes(String(cellValue));
+        } */
+    
+        if (col.filterType === 'select') {
+         if (Array.isArray(value)) {
+            if (value.length === 0) return true; 
+
+            return value.includes(String(cellValue));
+         }
+         return true; 
+      }
+      
       
 
         //Tarih filtrelemesi
         if (col.filterType === 'date') {
-           //const [date, setDate] = useState(new Date());
-        //const [startDate, setStartDate] = useState();
-        //const [endDate, setEndDate] = useState();
             if (typeof value !== 'object' || Array.isArray(value) || !value) {
             return true;
           }
@@ -146,16 +157,17 @@ const filteredData = useMemo(() => {
 
 
 
-       // Çoklu seçim: bir dizide var mı diye kontrol et 
-          if (Array.isArray(value)) {
-          return value.includes(String(cellValue));
-        }
+      
 
       //metin filtreleme
+      if (col.filterType === 'text') {
+        if (typeof value === 'string') {
       return String(cellValue ?? "")
         .toLowerCase()
         .includes(value.toLowerCase());
-    });
+        }
+        return true;
+    }});
 
     // 🔄 Her ikisini de birleştir
     return matchesGlobalSearch && matchesColumnFilters;
@@ -181,9 +193,9 @@ const filteredData = useMemo(() => {
       const valueB = b[key as keyof T];
 
       //  null veya undefined değerleri her zaman en sona at
-      if (valueA == null && valueB == null) return 0;
-      if (valueA == null) return 1;  // a sona gider
-      if (valueB == null) return -1; // b sona gider
+      //if (valueA == null && valueB == null) return 0;
+      //if (valueA == null) return 1;  // a sona gider
+      //if (valueB == null) return -1; // b sona gider
 
       let comparison = 0;
 
@@ -257,6 +269,14 @@ const handleDateRangeChange = (
     });
   };
 
+  const handleDateRangeClear = (key: string) => {
+  setFilters((prev) => {
+    const newFilters = { ...prev };
+    delete newFilters[key]; // Tarih filtresi nesnesini kaldır
+    return newFilters;
+  });
+};
+
 useEffect(() => {
   console.log("filters state changed:", filters);
 }, [filters]);
@@ -299,7 +319,10 @@ useEffect(() => {
             type="text"
             className="border border-gray-300 rounded-md p-2 w-full text-sm mt-1 "
             placeholder={`${col.header} ara...`}
-            value={filters[col.filterKey as string] ?? ""}
+            value={typeof filters[col.filterKey as string] === 'string'
+                ? (filters[col.filterKey as string] as string)
+                : ""
+            }
             onChange={(e) =>
               handleColumnFilterChange(col.filterKey as string, e.target.value)
               
@@ -396,12 +419,18 @@ useEffect(() => {
         label: v
       })) || []
     }
-    onChange={(selectedOptions) =>
-      handleColumnFilterChange(
+  
+
+      onChange={(selectedOptions) => {
+      const newValues = selectedOptions
+        ? (selectedOptions as { value: string; label: string }[]).map(opt => opt.value)
+        : [];
+        handleColumnFilterChange(
         col.filterKey as string,
-        (selectedOptions as { value: string; label: string }[]).map(opt => opt.value)
-      )
-    }
+        newValues
+      );
+    }}
+
     className="basic-multi-select mt-1  "
     classNamePrefix="select"
       menuPosition="fixed"
