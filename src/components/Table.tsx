@@ -97,8 +97,13 @@ const filteredData = useMemo(() => {
     //Kolon bazlı filtreleme
     const matchesColumnFilters = columns.every((col) => {
       const key = col.filterKey as string;
+   
+
       const value = filters[key];
+
+    if (col.filterType !== 'number' && col.filterType !== 'date') { 
       if (!value) return true;
+    }
 
        const cellValue = row[key as keyof T];
   
