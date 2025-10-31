@@ -1,9 +1,15 @@
-import React, { useState, useMemo ,useEffect} from 'react';
+import React, { useState, useMemo ,useEffect,useCallback} from 'react';
 import { FiArrowDown, FiArrowUp } from "react-icons/fi";
-import Select from 'react-select';
 import useDebounce from '../hooks/useDebounce';
-import type { TableProps } from "../types/tableTypes"; //runtime bir değeri yok, o yüzden import type kullanmalıyız.
+import type { ColumnDef, TableProps } from "../types/tableTypes"; //runtime bir değeri yok, o yüzden import type kullanmalıyız.
 import useSorting from '../hooks/useSorting';
+import type { FilterCondition, SelectOption } from '../types/filterTypes';
+import { useFilteredData } from '../hooks/useFilteredData';
+import TextFilter from './TextFilter';
+import NumberFilter from './/NumberFilter';
+import DateFilter from './DateFilter';
+import SelectFilter from './SelectFilter';
+
 
 // Tablo Component'i
  export function Table<T extends { id: string | number }>(props: TableProps<T>) {
@@ -16,6 +22,7 @@ import useSorting from '../hooks/useSorting';
  
   // State'ler
   const [searchTerm, setSearchTerm] = useState('');
+  //const [columnFilters, setColumnFilters] = useState<ColumnFilterType<T>>(null)
  
   const [inputValue, setInputValue] = useState(''); // Input'un anlık değerini tutar
   //const debouncedSearchTerm = useDebounce (searchTerm);// otomatik varsayılan değer gelir.
@@ -23,13 +30,7 @@ import useSorting from '../hooks/useSorting';
   
 
 
-  useEffect(() => {
-    console.log ("Arama,şu terimle tetiklendi:", debouncedSearchTerm );
-
-  },[debouncedSearchTerm]);
-
-
-  type FilterValue =
+/*   type FilterValue =
   | string
   | string[]
   | {
@@ -38,10 +39,11 @@ import useSorting from '../hooks/useSorting';
       min?:number;
       max?:number;
     };
-const [filters, setFilters] = useState<Record<string, FilterValue>>({});
+const [filters, setFilters] = useState<Record<string, FilterValue>>({}); */
 
-  
-const filteredData = useMemo(() => {
+const [filters, setFilters] = useState<FilterCondition[]>([]);
+
+/* const filteredData = useMemo(() => {
   return data.filter((row) => {
 
     //  Genel arama: satırdaki herhangi bir değer searchTerm'i içeriyor mu
@@ -159,10 +161,28 @@ if (col.filterType === 'number') {
     // 🔄 Her ikisini de birleştir
     return matchesGlobalSearch && matchesColumnFilters;
   });
-}, [data, columns, filters, searchTerm]);
+}, [data, columns, filters, searchTerm]); */
 
+const { filteredData } = useFilteredData(data, columns, filters, debouncedSearchTerm);
+const { sortConfig, handleSort, sortedData } = useSorting(filteredData);
 
-  const { sortConfig, handleSort, sortedData } = useSorting(filteredData);
+const selectOptionsMap = useMemo(() => {
+    const map = new Map<string, SelectOption[]>();
+    
+    columns.forEach(col => {
+      if (col.filterType === 'select' && typeof col.filterKey === 'string') {
+        const uniqueValues = new Set(data.map(d => (d as any)[col.filterKey!]));
+        const options = Array.from(uniqueValues).map(val => ({
+          value: String(val),
+          label: String(val),
+        }));
+        map.set(col.filterKey, options);
+      }
+    });
+    return map;
+  }, [data, columns]);
+
+  
   const handleInputChange = (e:React.ChangeEvent<HTMLInputElement>)=> {
     const value = e.target.value;
     setInputValue(value);
@@ -170,49 +190,32 @@ if (col.filterType === 'number') {
 
   };
 
- const handleColumnFilterChange = (key: string, value: string | string[]) => {
-  setFilters((prev) => ({ ...prev, [key]: value }));
-};
 
-const handleDateRangeChange = (
-    key: string,
-    part: 'start' | 'end',
-    value: string
-  ) => {
-    setFilters((prev) => {
-      // Önceki tarih filtresi değerlerini al (veya boş obje)
-      const currentFilter = (prev[key] || {}) as {
-        start?: string;
-        end?: string;
-      };
+  const handleFilterChange =useCallback( (filter: FilterCondition | null) => {
+    setFilters(prevFilters => {
+      const otherFilters = prevFilters.filter(f => f.columnId !== filter?.columnId);
       
-      // 'start' veya 'end' kısmını güncelle
-      const newFilter = {
-        ...currentFilter,
-        [part]: value,
-      };
-
-      // State'i güncelle
-      return {
-        ...prev,
-        [key]: newFilter,
-      };
+      // Eğer filter 'null' değilse (yani geçerli bir değer varsa) listeye ekle
+      if (filter) {
+        return [...otherFilters, filter];
+      }
+      
+      // 'null' ise (örn: input temizlendi), filtreyi listeden çıkar
+      return otherFilters;
     });
-  };
+  },[]);
 
-  const handleDateRangeClear = (key: string) => {
-  setFilters((prev) => {
-    const newFilters = { ...prev };
-    delete newFilters[key]; // Tarih filtresi nesnesini kaldır
-    return newFilters;
-  });
-};
+
 
 useEffect(() => {
   console.log("filters state changed:", filters);
 }, [filters]);
 
- 
+ useEffect(() => {
+    console.log ("Arama,şu terimle tetiklendi:", debouncedSearchTerm );
+
+  },[debouncedSearchTerm]);
+
   
   return (
       <div className="bg-white rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] overflow-x-auto">
@@ -230,176 +233,52 @@ useEffect(() => {
           <table className="w-full border-collapse ">
               {/* Tablo Başlıkları */}
              <thead>
-  <tr>
-    {columns.map((col) => (
-      <th key={col.header} className="px-4 py-2 text-left">
-        {/* Başlık */}
-        <div className="flex items-center justify-between"
-            onClick={() => handleSort(col)}>
-          <span>{col.header}</span>
-          {/* Aktif sıralama ikonu */}
-                                {col.hideSort ? null : sortConfig.key === (col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null)) && (
-                            sortConfig.direction === 'asc' 
-                                        ? <FiArrowUp className="text-gray-600" /> 
-                                        : <FiArrowDown className="text-gray-600" />
-                                )}
+              <tr>
+                {columns.map((col) => (
+                  <th key={col.header} className="px-4 py-2 text-left">
+                    {/* Başlık */}
+                    <div className="flex items-center justify-between"
+                        onClick={() => handleSort(col)}>
+                      <span>{col.header}</span>
+                      {/* Aktif sıralama ikonu */}
+                                            {col.hideSort ? null : sortConfig.key === (col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null)) && (
+                                        sortConfig.direction === 'asc' 
+                                                    ? <FiArrowUp className="text-gray-600" /> 
+                                                    : <FiArrowDown className="text-gray-600" />
+                                            )}
         </div>
 
-        {/*  Filtre alanı */}
-        {col.filterType === 'text' && (
-          <input
-            type="text"
-            className="border border-gray-300 rounded-md p-2 w-full text-sm focus:outline-blue-500  focus:ring-blue-500 "
-            placeholder={`${col.header} ara...`}
-            value={typeof filters[col.filterKey as string] === 'string'
-                ? (filters[col.filterKey as string] as string)
-                : ""
-            }
-            onChange={(e) =>
-              handleColumnFilterChange(col.filterKey as string, e.target.value)
-              
-            }
-          />
-        )}
-         {col.filterType==='number' && col.filterKey && (
-      <div className="flex space-x-2 mt-2  ">
-     <input
-      type="number"
-      className="border border-gray-300 rounded-lg p-2 w-1/2 text-sm focus:ring-blue-500 focus:border-blue-500"
-      value={(filters[`${String(col.filterKey)}_min`] as string | undefined) ?? ""}
-      onChange={(e) =>
-       handleColumnFilterChange(`${String(col.filterKey)}_min`, e.target.value)
-      }
-      placeholder="Min"
-      
-     />
-     <input
-      type="number"
-      className="border border-gray-300 rounded-lg p-2 w-1/2 text-sm focus:ring-blue-500 focus:border-blue-500"
-      value={(filters[`${String(col.filterKey)}_max`] as string | undefined) ?? ""}
-      onChange={(e) =>
-       handleColumnFilterChange(`${String(col.filterKey)}_max`, e.target.value)
-      }
-      placeholder="Max"
-        
-        />
-    </div>
-     )}
-{col.filterType === 'date' && (
-  //<div className="mt-2 space-y-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-  <div className = "flex space-x-2 mt-2">
-    {/* Başlık */}
-    <div className="flex items-center justify-between">
-      <h4 className="text-sm font-medium text-gray-700">Tarih Aralığı</h4>
-      {/* Temizleme Butonu */}
-      {(filters[col.filterKey as string] as { start?: string })?.start || 
-       (filters[col.filterKey as string] as { end?: string })?.end ? (
-        <button
-          type="button"
-          onClick={() => handleDateRangeClear(col.filterKey as string)}
-          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-        >
-          Temizle
-        </button>
-      ) : null}
-    </div>
-
-    {/* Tarih Seçim Alanları */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {/* Başlangıç Tarihi */}
-      <div className="space-y-1">
-        <label className="text-xs font-medium text-gray-600 block">
-          Başlangıç Tarihi
-        </label>
-        <div className="relative">
-          <input
-            type="date"
-            className="border border-gray-300 rounded-md p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            value={(filters[col.filterKey as string] as { start?: string })?.start ?? ''}
-            onChange={(e) => handleDateRangeChange(col.filterKey as string, 'start', e.target.value)}
-          />
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      {/* Bitiş Tarihi */}
-      <div className="space-y-1">
-        <label className="text-xs font-medium text-gray-600 block">
-          Bitiş Tarihi
-        </label>
-        <div className="relative">
-          <input
-            type="date"
-            className="border border-gray-300 rounded-md p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            value={(filters[col.filterKey as string] as { end?: string })?.end ?? ''}
-            onChange={(e) => handleDateRangeChange(col.filterKey as string, 'end', e.target.value)}
-            min={(filters[col.filterKey as string] as { start?: string })?.start || ''}
-          />
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* Seçilen Tarih Gösterimi */}
-    {((filters[col.filterKey as string] as { start?: string })?.start || 
-      (filters[col.filterKey as string] as { end?: string })?.end) && (
-      <div className="text-xs text-gray-100 bg-white p-2 rounded border">
-        <span className="font-medium">Seçilen: </span>
-        {(filters[col.filterKey as string] as { start?: string })?.start || 'Başlangıç yok'} 
-        {' - '} 
-        {(filters[col.filterKey as string] as { end?: string })?.end || 'Bitiş yok'}
-      </div>
-    )}
-  </div>
-)}
-        
-        {col.filterType === 'select' && (
-          <div className="filter-select-container ">
-  <Select
-    isMulti
-    options={[...new Set(data.map((d) => d[col.filterKey as keyof T]))].map(val => ({
-      value: String(val),
-      label: String(val)
-    }))}
-    value={
-      (filters[col.filterKey as string] as string[] | undefined)?.map(v => ({
-        value: v,
-        label: v
-      })) || []
-    }
-  
-
-      onChange={(selectedOptions) => {
-      const newValues = selectedOptions
-        ? (selectedOptions as { value: string; label: string }[]).map(opt => opt.value)
-        : [];
-        handleColumnFilterChange(
-        col.filterKey as string,
-        newValues
-      );
-    }}
-
-    className="basic-multi-select mt-1  "
-    classNamePrefix="select"
-      menuPosition="fixed"
-      menuPlacement="auto"
-  /></div>
-)}
-
-
-        
-      </th>
-    ))}
-  </tr>
-</thead>
+  {/* Filtre Alanı (Bileşenlere devredildi) */}
+                      {col.filterType === 'text' && col.filterKey && (
+                        <TextFilter
+                          columnId={col.filterKey as string}
+                          onFilterChange={handleFilterChange}
+                        />
+                      )}
+                      {col.filterType === 'number' && col.filterKey && (
+                        <NumberFilter
+                          columnId={col.filterKey as string}
+                          onFilterChange={handleFilterChange}
+                        />
+                      )}
+                      {col.filterType === 'date' && col.filterKey && (
+                        <DateFilter
+                          columnId={col.filterKey as string}
+                          onFilterChange={handleFilterChange}
+                        />
+                      )}
+                      {col.filterType === 'select' && col.filterKey && (
+                        <SelectFilter
+                          columnId={col.filterKey as string}
+                          onFilterChange={handleFilterChange}
+                          options={selectOptionsMap.get(col.filterKey as string) || []}
+                          isMulti={col.filterSelectIsMulti || false} // types'tan gelen yeni prop
+                        />
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
 
 
               {/* Tablo Gövdesi */}

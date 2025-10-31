@@ -1,4 +1,5 @@
 import React from 'react'
+export type FilterType = 'text' | 'date' | 'select' | 'number';
 
 export interface ColumnDef<T> {
   header: string;
@@ -6,7 +7,8 @@ export interface ColumnDef<T> {
   sortKey?: keyof T;
 
   filterKey?: keyof T;       // Hangi alan filtrelenecek
-  filterType?: 'text' | 'date' | 'select'| "number"; // Filtre tipi
+  filterType?: FilterType; 
+  filterSelectIsMulti?: boolean;
   hideSort?:boolean
 }
 
