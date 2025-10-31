@@ -74,7 +74,7 @@ const DateFilter: React.FC<DateFilterProps> = ({ columnId, onFilterChange }) => 
     } else {
       onFilterChange(null);
     }
-  }, [value, operation, columnId, onFilterChange]);
+  }, [value, operation, columnId]);
 
   const handleOperationChange = (op: DateOperation) => {
     setOperation(op);

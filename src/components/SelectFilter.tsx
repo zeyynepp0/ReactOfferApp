@@ -10,7 +10,7 @@ interface SelectFilterProps {
   isMulti: boolean;
 }
 
-const SelectFilter: React.FC<SelectFilterProps> = ({ columnId, onFilterChange, options, isMulti }) => {
+const SelectFilter: React.FC<SelectFilterProps> = ({ columnId, onFilterChange, options }) => {
   const [operation, setOperation] = useState<SelectOperation>('is');
   const [value, setValue] = useState<SelectOption[] | SelectOption | null>(null);
 
@@ -33,7 +33,7 @@ const SelectFilter: React.FC<SelectFilterProps> = ({ columnId, onFilterChange, o
     } else {
       onFilterChange(null); // Seçim boşsa filtreyi kaldır
     }
-  }, [value, operation, columnId, onFilterChange]);
+  }, [value, operation, columnId]);
 
   return (
     <div className="space-y-2 mt-2" onClick={(e) => e.stopPropagation()}>
@@ -43,7 +43,7 @@ const SelectFilter: React.FC<SelectFilterProps> = ({ columnId, onFilterChange, o
         onChange={(op) => setOperation(op as SelectOperation)}
       />
       <Select
-        isMulti={isMulti}
+        isMulti={true}
         options={options}
         value={value}
         onChange={(selected) => setValue(selected as any)}

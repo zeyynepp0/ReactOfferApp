@@ -28,7 +28,7 @@ const TextFilter: React.FC<TextFilterProps> = ({ columnId, onFilterChange }) => 
         value:debonceValue,
       });
     }
-  }, [debonceValue, operation, columnId, onFilterChange]);
+  }, [debonceValue, operation, columnId]);
 
   return (
     <div className="space-y-2 mt-2" onClick={(e) => e.stopPropagation()}>

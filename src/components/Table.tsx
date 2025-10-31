@@ -191,7 +191,7 @@ const selectOptionsMap = useMemo(() => {
   };
 
 
-  const handleFilterChange =useCallback( (filter: FilterCondition | null) => {
+/*   const handleFilterChange =useCallback( (filter: FilterCondition | null) => {
     setFilters(prevFilters => {
       const otherFilters = prevFilters.filter(f => f.columnId !== filter?.columnId);
       
@@ -203,7 +203,26 @@ const selectOptionsMap = useMemo(() => {
       // 'null' ise (örn: input temizlendi), filtreyi listeden çıkar
       return otherFilters;
     });
-  },[]);
+  },[]); */
+
+  const handleFilterChange = useCallback((
+    columnId: string, 
+    filter: FilterCondition | null
+  ) => {
+    
+    setFilters(prevFilters => {
+      // Artık 'columnId'yi doğrudan parametreden alıyoruz.
+      const otherFilters = prevFilters.filter(f => f.columnId !== columnId);
+      
+      // filter 'null' değilse (yani bir değer varsa) listeye ekle
+      if (filter) {
+        return [...otherFilters, filter];
+      }
+      
+      // 'null' ise (input temizlendi), filtreyi listeden çıkar
+      return otherFilters;
+    });
+  }, [setFilters]);
 
 
 
@@ -252,25 +271,54 @@ useEffect(() => {
                       {col.filterType === 'text' && col.filterKey && (
                         <TextFilter
                           columnId={col.filterKey as string}
-                          onFilterChange={handleFilterChange}
+                        /*   onFilterChange={(filter: FilterCondition | null) => {
+                              const columnId = col.filterKey as string;
+                              setFilters(prevFilters => {
+                                  const otherFilters = prevFilters.filter(f => f.columnId !== columnId);
+                                  if (filter) {
+                                      return [...otherFilters, filter];
+                                  }
+                                  return otherFilters;
+                              });
+                          }} */
+                          onFilterChange={(filter) => 
+                            handleFilterChange(col.filterKey as string, filter)
+                          }
                         />
                       )}
                       {col.filterType === 'number' && col.filterKey && (
                         <NumberFilter
                           columnId={col.filterKey as string}
-                          onFilterChange={handleFilterChange}
+                          /* onFilterChange={(filter: FilterCondition | null) => {
+                             // const columnId = col.filterKey as string;
+                              /* setFilters(prevFilters => {
+                                  const otherFilters = prevFilters.filter(f => f.columnId !== columnId);
+                                  if (filter) {
+                                      return [...otherFilters, filter];
+                                  }
+                                  return otherFilters;
+                              }); 
+                          }} */
+                          onFilterChange={(filter) => 
+                            handleFilterChange(col.filterKey as string, filter)
+                          }
                         />
                       )}
+                      
                       {col.filterType === 'date' && col.filterKey && (
                         <DateFilter
                           columnId={col.filterKey as string}
-                          onFilterChange={handleFilterChange}
+                          onFilterChange={(filter) => 
+                            handleFilterChange(col.filterKey as string, filter)
+                          }
                         />
                       )}
                       {col.filterType === 'select' && col.filterKey && (
                         <SelectFilter
                           columnId={col.filterKey as string}
-                          onFilterChange={handleFilterChange}
+                          onFilterChange={(filter) => 
+                            handleFilterChange(col.filterKey as string, filter)
+                          }
                           options={selectOptionsMap.get(col.filterKey as string) || []}
                           isMulti={col.filterSelectIsMulti || false} // types'tan gelen yeni prop
                         />

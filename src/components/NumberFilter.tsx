@@ -42,7 +42,7 @@ const[immediateValue, setImmediateValue] = useState<string |{from: string, to:st
     } else {
       onFilterChange(null); // Koşul geçersizse filtreyi kaldır
     }
-  }, [debouncedValue, operation, columnId, onFilterChange]);
+  }, [debouncedValue, operation, columnId]);
 
   // Operasyon değiştiğinde, 'between' için obje, diğerleri için string state ayarla
   const handleOperationChange = (op: NumberOperation) => {
