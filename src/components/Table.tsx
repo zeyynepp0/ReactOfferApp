@@ -1,14 +1,10 @@
 import React, { useState, useMemo ,useEffect,useCallback} from 'react';
-import { FiArrowDown, FiArrowUp } from "react-icons/fi";
 import useDebounce from '../hooks/useDebounce';
-import type { ColumnDef, TableProps } from "../types/tableTypes"; //runtime bir değeri yok, o yüzden import type kullanmalıyız.
+import type { TableProps } from "../types/tableTypes"; //runtime bir değeri yok, o yüzden import type kullanmalıyız.
 import useSorting from '../hooks/useSorting';
 import type { FilterCondition, SelectOption } from '../types/filterTypes';
 import { useFilteredData } from '../hooks/useFilteredData';
-import TextFilter from './TextFilter';
-import NumberFilter from './/NumberFilter';
-import DateFilter from './DateFilter';
-import SelectFilter from './SelectFilter';
+import TableHeader from './TableHeader';
 
 
 // Tablo Component'i
@@ -251,82 +247,13 @@ useEffect(() => {
           {/* Tablo */}
           <table className="w-full border-collapse ">
               {/* Tablo Başlıkları */}
-             <thead>
-              <tr>
-                {columns.map((col) => (
-                  <th key={col.header} className="px-4 py-2 text-left">
-                    {/* Başlık */}
-                    <div className="flex items-center justify-between"
-                        onClick={() => handleSort(col)}>
-                      <span>{col.header}</span>
-                      {/* Aktif sıralama ikonu */}
-                                            {col.hideSort ? null : sortConfig.key === (col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null)) && (
-                                        sortConfig.direction === 'asc' 
-                                                    ? <FiArrowUp className="text-gray-600" /> 
-                                                    : <FiArrowDown className="text-gray-600" />
-                                            )}
-        </div>
-
-  {/* Filtre Alanı (Bileşenlere devredildi) */}
-                      {col.filterType === 'text' && col.filterKey && (
-                        <TextFilter
-                          columnId={col.filterKey as string}
-                        /*   onFilterChange={(filter: FilterCondition | null) => {
-                              const columnId = col.filterKey as string;
-                              setFilters(prevFilters => {
-                                  const otherFilters = prevFilters.filter(f => f.columnId !== columnId);
-                                  if (filter) {
-                                      return [...otherFilters, filter];
-                                  }
-                                  return otherFilters;
-                              });
-                          }} */
-                          onFilterChange={(filter) => 
-                            handleFilterChange(col.filterKey as string, filter)
-                          }
-                        />
-                      )}
-                      {col.filterType === 'number' && col.filterKey && (
-                        <NumberFilter
-                          columnId={col.filterKey as string}
-                          /* onFilterChange={(filter: FilterCondition | null) => {
-                             // const columnId = col.filterKey as string;
-                              /* setFilters(prevFilters => {
-                                  const otherFilters = prevFilters.filter(f => f.columnId !== columnId);
-                                  if (filter) {
-                                      return [...otherFilters, filter];
-                                  }
-                                  return otherFilters;
-                              }); 
-                          }} */
-                          onFilterChange={(filter) => 
-                            handleFilterChange(col.filterKey as string, filter)
-                          }
-                        />
-                      )}
-                      
-                      {col.filterType === 'date' && col.filterKey && (
-                        <DateFilter
-                          columnId={col.filterKey as string}
-                          onFilterChange={(filter) => 
-                            handleFilterChange(col.filterKey as string, filter)
-                          }
-                        />
-                      )}
-                      {col.filterType === 'select' && col.filterKey && (
-                        <SelectFilter
-                          columnId={col.filterKey as string}
-                          onFilterChange={(filter) => 
-                            handleFilterChange(col.filterKey as string, filter)
-                          }
-                          options={selectOptionsMap.get(col.filterKey as string) || []}
-                          isMulti={col.filterSelectIsMulti || false} // types'tan gelen yeni prop
-                        />
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
+            <TableHeader
+                columns={columns}
+                sortConfig={sortConfig}
+                handleSort={handleSort}
+                handleFilterChange={handleFilterChange}
+                selectOptionsMap={selectOptionsMap}
+             />
 
 
               {/* Tablo Gövdesi */}
