@@ -1,27 +1,9 @@
-import React, { useState, useRef, useMemo ,useEffect} from 'react';
+import React, { useState, useMemo ,useEffect} from 'react';
 import { FiArrowDown, FiArrowUp } from "react-icons/fi";
 import Select from 'react-select';
-//import DatePicker from "react-datepicker";
-
-
-// Arayüz Tanımları
-export interface ColumnDef<T> {
-  header: string;
-  fieldKey: keyof T | ((row: T, index: number) => React.ReactNode);
-  sortKey?: keyof T;
-
-  filterKey?: keyof T;       // Hangi alan filtrelenecek
-  filterType?: 'text' | 'date' | 'select'| "number"; // Filtre tipi
-}
-
-interface TableProps<T> {
-  columns: ColumnDef<T>[];
-  data?: T[];
-  emptyDataText?: string;
-  onRowClick?: (rowData: T) => void;
-}
-
-
+import useDebounce from '../hooks/useDebounce';
+import type { TableProps } from "../types/tableTypes"; //runtime bir değeri yok, o yüzden import type kullanmalıyız.
+import useSorting from '../hooks/useSorting';
 
 // Tablo Component'i
  export function Table<T extends { id: string | number }>(props: TableProps<T>) {
@@ -31,16 +13,21 @@ interface TableProps<T> {
     emptyDataText = "Gösterilecek veri yok",
     onRowClick,
   } = props;
-    
+ 
   // State'ler
   const [searchTerm, setSearchTerm] = useState('');
-  //const [searchColumnTerm, setSearchColumnTerm] = useState('');
+ 
   const [inputValue, setInputValue] = useState(''); // Input'un anlık değerini tutar
-  const timerRef = useRef<number | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof T | null; direction: 'asc' | 'desc' }>({
-      key: null,
-      direction: 'asc',
-  });  
+  //const debouncedSearchTerm = useDebounce (searchTerm);// otomatik varsayılan değer gelir.
+  const debouncedSearchTerm = useDebounce (searchTerm,300);
+  
+
+
+  useEffect(() => {
+    console.log ("Arama,şu terimle tetiklendi:", debouncedSearchTerm );
+
+  },[debouncedSearchTerm]);
+
 
   type FilterValue =
   | string
@@ -52,31 +39,6 @@ interface TableProps<T> {
       max?:number;
     };
 const [filters, setFilters] = useState<Record<string, FilterValue>>({});
-
-
-
-//Sıralama Tetikleyicisi 
-const handleSort = (col: ColumnDef<T>) => { // <-- Parametreyi 'key' yerine 'col' objesi olarak değiştirin
-    
-    // Sıralama için kullanılacak anahtarı belirle: Önce sortKey'e bak,
-    // o yoksa ve fieldKey string ise fieldKey'i kullan.
-    const keyToSortBy = col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null);
-
-    // Sıralanacak bir anahtar bulunamazsa (örn: fieldKey fonksiyon ve sortKey yoksa) işlemi durdur
-    if (keyToSortBy === null) return; 
-
-    setSortConfig((prev) => {
-        if (prev.key === keyToSortBy) { // keyToSortBy değişkenini kullan
-          // Aynı sütuna tıklandıysa yönü değiştir
-          return {
-              key: keyToSortBy, // keyToSortBy değişkenini kullan
-              direction: prev.direction === 'asc' ? 'desc' : 'asc',
-          };
-        }
-        // Yeni bir sütuna tıklandıysa 'asc' ile başla
-        return { key: keyToSortBy, direction: 'asc' }; // keyToSortBy değişkenini kullan
-   });
-};
 
   
 const filteredData = useMemo(() => {
@@ -200,63 +162,12 @@ if (col.filterType === 'number') {
 }, [data, columns, filters, searchTerm]);
 
 
+  const { sortConfig, handleSort, sortedData } = useSorting(filteredData);
+  const handleInputChange = (e:React.ChangeEvent<HTMLInputElement>)=> {
+    const value = e.target.value;
+    setInputValue(value);
+    setSearchTerm(value);
 
-
-  // --- Sıralama Mantığı ---
-  // Sadece filteredData veya sortConfig değiştiğinde yeniden hesaplanır.
-  const sortedData = useMemo(() => {
-    const key = sortConfig.key;
-    
-    // Eğer bir sıralama anahtarı seçilmemişse, sadece filtrelenmiş veriyi döndür
-    if (key === null) {
-      return filteredData;
-    }
-
-    // filteredData'nın bir kopyasını alıp (.sort() orijinal diziyi bozar) sırala
-    const sorted = [...filteredData].sort((a, b) => {
-      const valueA = a[key as keyof T]; 
-      const valueB = b[key as keyof T];
-
-      let comparison = 0;
-
-      
-      if (typeof valueA === 'number' && typeof valueB === 'number') {
-        comparison = valueA - valueB;
-      } 
-      else if (valueA instanceof Date && valueB instanceof Date) {
-        
-        comparison = valueA.getTime() - valueB.getTime(); 
-      } 
-      else {
-        
-        comparison = String(valueA).localeCompare(String(valueB));
-      }
-
-      
-      return sortConfig.direction === 'asc' ? comparison : -comparison;
-    });
-
-    return sorted;
-
-  }, [filteredData, sortConfig]); // Bağımlılıklar
-
-
-  // --- Input Değişim (Arama) Tetikleyicisi ---
-  const handleInputChange = (e:React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setInputValue(value); // Input'un görünümünü anlık güncelle
-      
-      // Debounce: Kullanıcı yazmayı bıraktıktan 500ms sonra aramayı tetikle
-      // Önceki timer'ı iptal et
-      if(timerRef.current){
-          window.clearTimeout(timerRef.current)
-      }
-
-      // Yeni timer kur
-      timerRef.current = window.setTimeout(()=>{
-          //console.warn(`Filtreleme tetiklendi! Arama terimi: "${value}"`);
-          setSearchTerm(value); // Asıl filtrelemeyi yapacak state'i güncelle
-      }, 500);
   };
 
  const handleColumnFilterChange = (key: string, value: string | string[]) => {
@@ -301,6 +212,7 @@ useEffect(() => {
   console.log("filters state changed:", filters);
 }, [filters]);
 
+ 
   
   return (
       <div className="bg-white rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] overflow-x-auto">
@@ -326,7 +238,7 @@ useEffect(() => {
             onClick={() => handleSort(col)}>
           <span>{col.header}</span>
           {/* Aktif sıralama ikonu */}
-                                {sortConfig.key === (col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null)) && (
+                                {col.hideSort ? null : sortConfig.key === (col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null)) && (
                             sortConfig.direction === 'asc' 
                                         ? <FiArrowUp className="text-gray-600" /> 
                                         : <FiArrowDown className="text-gray-600" />
@@ -337,7 +249,7 @@ useEffect(() => {
         {col.filterType === 'text' && (
           <input
             type="text"
-            className="border border-gray-300 rounded-md p-2 w-full text-sm mt-1 "
+            className="border border-gray-300 rounded-md p-2 w-full text-sm focus:outline-blue-500  focus:ring-blue-500 "
             placeholder={`${col.header} ara...`}
             value={typeof filters[col.filterKey as string] === 'string'
                 ? (filters[col.filterKey as string] as string)
@@ -350,29 +262,32 @@ useEffect(() => {
           />
         )}
          {col.filterType==='number' && col.filterKey && (
-      <div className="flex space-x-2 mt-2">
+      <div className="flex space-x-2 mt-2  ">
      <input
       type="number"
-      className="border border-gray-300 rounded-lg p-2 w-1/2 text-sm focus:ring-pink-300 focus:border-pink-400"
+      className="border border-gray-300 rounded-lg p-2 w-1/2 text-sm focus:ring-blue-500 focus:border-blue-500"
       value={(filters[`${String(col.filterKey)}_min`] as string | undefined) ?? ""}
       onChange={(e) =>
        handleColumnFilterChange(`${String(col.filterKey)}_min`, e.target.value)
       }
       placeholder="Min"
+      
      />
      <input
       type="number"
-      className="border border-gray-300 rounded-lg p-2 w-1/2 text-sm focus:ring-pink-300 focus:border-pink-400"
+      className="border border-gray-300 rounded-lg p-2 w-1/2 text-sm focus:ring-blue-500 focus:border-blue-500"
       value={(filters[`${String(col.filterKey)}_max`] as string | undefined) ?? ""}
       onChange={(e) =>
        handleColumnFilterChange(`${String(col.filterKey)}_max`, e.target.value)
       }
       placeholder="Max"
-    />
+        
+        />
     </div>
      )}
 {col.filterType === 'date' && (
-  <div className="mt-2 space-y-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+  //<div className="mt-2 space-y-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+  <div className = "flex space-x-2 mt-2">
     {/* Başlık */}
     <div className="flex items-center justify-between">
       <h4 className="text-sm font-medium text-gray-700">Tarih Aralığı</h4>
@@ -525,5 +440,6 @@ useEffect(() => {
               </tbody>
           </table>
       </div>
+      
   );
 }

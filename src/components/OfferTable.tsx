@@ -85,6 +85,7 @@ const OfferTable: React.FC<OfferTableProps> = ({ setEditingOfferId }) => {
     },
     {
       header: 'İşlemler',
+      hideSort:true,
       fieldKey: (row) => (
         <div className="flex gap-2">
           <button
