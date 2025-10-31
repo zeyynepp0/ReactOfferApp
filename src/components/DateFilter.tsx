@@ -44,7 +44,7 @@ interface DateFilterProps {
 }
 
 const DateFilter: React.FC<DateFilterProps> = ({ columnId, onFilterChange }) => {
-  const [operation, setOperation] = useState<DateOperation>('is');
+  const [operation, setOperation] = useState<DateOperation>('equals');
   const [value, setValue] = useState<string | { from: string, to: string }>('');
 
   useEffect(() => {

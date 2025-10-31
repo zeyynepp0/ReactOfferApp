@@ -22,7 +22,7 @@ const FILTER_OPERATIONS_MAP: Record<FilterType, { value: FilterOperations, label
     { value: 'between' as NumberOperation, label: 'Arasında' },
   ],
   date: [
-    { value: 'is' as DateOperation, label: 'Tarih' },
+    { value: 'equals' as DateOperation, label: 'Tarih' },
     { value: 'notEquals' as DateOperation, label: 'Eşit değildir' },
     { value: 'gt' as DateOperation, label: 'Sonra' },
     { value: 'lt' as DateOperation, label: 'Önce' },

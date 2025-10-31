@@ -5,7 +5,7 @@ import useSorting from '../hooks/useSorting';
 import type { FilterCondition, SelectOption } from '../types/filterTypes';
 import { useFilteredData } from '../hooks/useFilteredData';
 import TableHeader from './TableHeader';
-
+import TableBody from './TableBody';
 
 // Tablo Component'i
  export function Table<T extends { id: string | number }>(props: TableProps<T>) {
@@ -39,126 +39,6 @@ const [filters, setFilters] = useState<Record<string, FilterValue>>({}); */
 
 const [filters, setFilters] = useState<FilterCondition[]>([]);
 
-/* const filteredData = useMemo(() => {
-  return data.filter((row) => {
-
-    //  Genel arama: satırdaki herhangi bir değer searchTerm'i içeriyor mu
-    const matchesGlobalSearch = searchTerm
-      ? columns.some((col) => {
-          if (typeof col.fieldKey === 'function') return false;
-          const cellValue = row[col.fieldKey];
-          return String(cellValue ?? '')
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase());
-        })
-      : true; // searchTerm boşsa tüm satırlar geçer
-
-
-    //Kolon bazlı filtreleme
-    const matchesColumnFilters = columns.every((col) => {
-      const key = col.filterKey as string;
-   
-
-      const value = filters[key];
-
-    if (col.filterType !== 'number' && col.filterType !== 'date') { 
-      if (!value) return true;
-    }
-
-       const cellValue = row[key as keyof T];
-  
-     
-    
-        if (col.filterType === 'select') {
-         if (Array.isArray(value)) {
-            if (value.length === 0) return true; 
-
-            return value.includes(String(cellValue));
-         }
-         return true; 
-      }
-      
-if (col.filterType === 'number') {
-            const minFilterKey = `${key}_min`;
-            const maxFilterKey = `${key}_max`;
-
-            const minStr = filters[minFilterKey] as string | undefined;
-            const maxStr = filters[maxFilterKey] as string | undefined;
-
-            // Satır değerini sayıya dönüştür
-            const cellNumValue = Number(row[key as keyof T]);
-
-            // Filtre değerlerini parse et, boş stringleri -Infinity veya Infinity olarak ayarla
-            // Bu sayede sadece bir limit girilse bile doğru çalışır
-            const minVal = (minStr && minStr.trim() !== '') ? Number(minStr) : -Infinity;
-            const maxVal = (maxStr && maxStr.trim() !== '') ? Number(maxStr) : Infinity;
-
-            // Eğer hiç filtre girilmemişse (varsayılan değerler -Infinity ve Infinity)
-            if (minVal === -Infinity && maxVal === Infinity) return true;
-
-            // Geçersiz sayısal değerler için kontrol
-            if (isNaN(cellNumValue) || isNaN(minVal) || isNaN(maxVal)) return true;
-
-            // Filtreleme koşulu: hücre değeri [minVal, maxVal] aralığında olmalı
-            return cellNumValue >= minVal && cellNumValue <= maxVal;
-       }
-
-
-
-        //Tarih filtrelemesi
-        if (col.filterType === 'date') {
-            if (typeof value !== 'object' || Array.isArray(value) || !value) {
-            return true;
-          }
-
-         const dateFilter = value as { start?: string; end?: string };
-          const { start, end } = dateFilter;
-
-          // Eğer başlangıç ve bitiş tarihi girilmemişse, bu filtreyi pas geç
-          if (!start && !end) return true;
-
-          // Hücredeki tarihi parse et
-          const rowDate = new Date(cellValue as string);
-          // Geçerli bir tarih değilse, filtreleme dışı bırakma (veya isteğe bağlı olarak bırak)
-          if (isNaN(rowDate.getTime())) return true;
-
-          // Başlangıç tarihinden küçük mü kontrolü
-          if (start) {
-            const startDate = new Date(start);
-            if (rowDate < startDate) return false;
-          }
-
-          // Bitiş tarihinden büyük mü kontrolü
-          if (end) {
-            const endDate = new Date(end);
-            // Kullanıcının seçtiği günü TAMAMEN (23:59:59) dahil et
-            endDate.setHours(23, 59, 59, 999);
-            if (rowDate > endDate) return false;
-          }
-
-            
-          return true;
-}         
-
-
-
-      
-
-      //metin filtreleme
-      if (col.filterType === 'text') {
-        if (typeof value === 'string') {
-      return String(cellValue ?? "")
-        .toLowerCase()
-        .includes(value.toLowerCase());
-        }
-        return true;
-    }});
-
-    // 🔄 Her ikisini de birleştir
-    return matchesGlobalSearch && matchesColumnFilters;
-  });
-}, [data, columns, filters, searchTerm]); */
-
 const { filteredData } = useFilteredData(data, columns, filters, debouncedSearchTerm);
 const { sortConfig, handleSort, sortedData } = useSorting(filteredData);
 
@@ -186,20 +66,6 @@ const selectOptionsMap = useMemo(() => {
 
   };
 
-
-/*   const handleFilterChange =useCallback( (filter: FilterCondition | null) => {
-    setFilters(prevFilters => {
-      const otherFilters = prevFilters.filter(f => f.columnId !== filter?.columnId);
-      
-      // Eğer filter 'null' değilse (yani geçerli bir değer varsa) listeye ekle
-      if (filter) {
-        return [...otherFilters, filter];
-      }
-      
-      // 'null' ise (örn: input temizlendi), filtreyi listeden çıkar
-      return otherFilters;
-    });
-  },[]); */
 
   const handleFilterChange = useCallback((
     columnId: string, 
@@ -257,41 +123,13 @@ useEffect(() => {
 
 
               {/* Tablo Gövdesi */}
-              <tbody>
-                  
-                  {sortedData.length === 0 ? (
-                      <tr>
-                          <td colSpan={columns.length} className="text-center text-gray-500 p-4">
-                              {/* Arama terimi varsa yoksa mesajı yazdır */}
-                              {searchTerm 
-                                ? "Arama sonucuyla eşleşen veri bulunamadı" 
-                                : emptyDataText
-                              }
-                          </td>
-                      </tr>
-                  ) : (
-                      
-                      sortedData.map((row, rowIndex) => (
-                          <tr
-                              key={row.id}
-                              onClick={() => onRowClick && onRowClick(row)}
-                              className={onRowClick ? "cursor-pointer hover:bg-gray-100 transition" : ""}
-                          >
-                              {columns.map((col, colIndex) => (
-                                  <td key={`${col.header}-${colIndex}`} className="p-3 border-b border-slate-100">
-                                      
-                                      {/* Hücre içeriğini render et */}
-                                      {typeof col.fieldKey === "function"
-                                          ? col.fieldKey(row, rowIndex) // Fonksiyon ise çalıştır (örn: buton)
-                                          : String(row[col.fieldKey] ?? "") // Değilse değeri string olarak bas
-                                      }
-                                      
-                                  </td>
-                              ))}
-                          </tr>
-                      ))
-                  )}
-              </tbody>
+             <TableBody
+              columns={columns}
+              sortedData={sortedData}
+              emptyDataText={emptyDataText}
+              searchTerm={searchTerm} // 'Anlık' arama terimini mesaj için gönder
+              onRowClick={onRowClick}
+            />
           </table>
       </div>
       

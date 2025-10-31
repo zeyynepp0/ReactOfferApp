@@ -43,7 +43,7 @@ function applyDateFilter(cellValue: any, op: string, filterValue: any): boolean 
 
   try {
     switch (op) {
-      case 'is':
+      case 'equals':
         const filterDate = new Date(filterValue);
         filterDate.setHours(0, 0, 0, 0);
         return cell.getTime() === filterDate.getTime();
