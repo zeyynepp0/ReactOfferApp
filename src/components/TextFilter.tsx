@@ -10,11 +10,10 @@ interface TextFilterProps {
 }
 
 const TextFilter: React.FC<TextFilterProps> = ({ columnId, onFilterChange }) => {
-  const [operation, setOperation] = useState<TextOperation>('contains');
-  //const [value, setValue] = useState('');
+const [operation, setOperation] = useState<TextOperation>('contains');
 
-  const[immediateValue, setImmediateValue] = useState('');
-  const debonceValue = useDebounce(immediateValue,300);
+const[immediateValue, setImmediateValue] = useState('');
+const debonceValue = useDebounce(immediateValue,300);
 
   // Operasyon veya değer değiştikçe ana filtre durumunu güncelle
   useEffect(() => {

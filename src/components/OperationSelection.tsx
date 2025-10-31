@@ -34,7 +34,6 @@ const FILTER_OPERATIONS_MAP: Record<FilterType, { value: FilterOperations, label
   ],
 };
 
-// 2. Bileşen prop'ları
 interface OperationSelectProps {
   filterType: FilterType;
   value: FilterOperations;
@@ -52,12 +51,12 @@ const OperationSelect: React.FC<OperationSelectProps> = ({ filterType, value, on
     <select
       value={value}
       onChange={handleChange}
-      // Bu çok önemli: Select'e tıklandığında arkadaki
-      // tablo başlığının sıralama (sort) fonksiyonu tetiklenmesin.
+      //  Select e tıklandığında arkadaki
+      // tablo başlığının sort fonksiyonu tetiklenmesin.
       onClick={(e) => e.stopPropagation()} 
       className="border border-gray-300 rounded-md p-2 w-full text-sm focus:outline-blue-500 focus:ring-blue-500"
     >
-      {/* 4. Bulunan seçenekleri ekrana basıyoruz. */}
+    
       {options.map(op => (
         <option key={op.value} value={op.value}>
           {op.label}

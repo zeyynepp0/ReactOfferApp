@@ -6,6 +6,7 @@ import type { FilterCondition, SelectOption } from '../types/filterTypes';
 import { useFilteredData } from '../hooks/useFilteredData';
 import TableHeader from './TableHeader';
 import TableBody from './TableBody';
+import { useFiltering } from '../hooks/useFiltering';
 
 // Tablo Component'i
  export function Table<T extends { id: string | number }>(props: TableProps<T>) {
@@ -25,19 +26,7 @@ import TableBody from './TableBody';
   const debouncedSearchTerm = useDebounce (searchTerm,300);
   
 
-
-/*   type FilterValue =
-  | string
-  | string[]
-  | {
-      start?: string;
-      end?: string;
-      min?:number;
-      max?:number;
-    };
-const [filters, setFilters] = useState<Record<string, FilterValue>>({}); */
-
-const [filters, setFilters] = useState<FilterCondition[]>([]);
+const { filters, handleFilterChange } = useFiltering();
 
 const { filteredData } = useFilteredData(data, columns, filters, debouncedSearchTerm);
 const { sortConfig, handleSort, sortedData } = useSorting(filteredData);
@@ -67,24 +56,6 @@ const selectOptionsMap = useMemo(() => {
   };
 
 
-  const handleFilterChange = useCallback((
-    columnId: string, 
-    filter: FilterCondition | null
-  ) => {
-    
-    setFilters(prevFilters => {
-      // Artık 'columnId'yi doğrudan parametreden alıyoruz.
-      const otherFilters = prevFilters.filter(f => f.columnId !== columnId);
-      
-      // filter 'null' değilse (yani bir değer varsa) listeye ekle
-      if (filter) {
-        return [...otherFilters, filter];
-      }
-      
-      // 'null' ise (input temizlendi), filtreyi listeden çıkar
-      return otherFilters;
-    });
-  }, [setFilters]);
 
 
 

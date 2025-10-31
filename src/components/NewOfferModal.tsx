@@ -14,7 +14,7 @@ import { computeTotals } from "../utils/offerCalculations";
 import type { RootState } from "../redux/store";
 import { toast } from 'react-toastify';
 import ButtonInput from "./ButtonInput";
-import Test from "./Test";
+//import Test from "./Test";
 
 interface NewOfferModalProps {
   setModalOpen: (value: boolean) => void;

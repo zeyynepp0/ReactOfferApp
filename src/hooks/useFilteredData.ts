@@ -38,7 +38,7 @@ function applyNumberFilter(cellValue: any, op: string, filterValue: any): boolea
 function applyDateFilter(cellValue: any, op: string, filterValue: any): boolean {
   const cell = new Date(cellValue);
   if (isNaN(cell.getTime())) return false;
-  // Saat farklarından kaçınmak için tarihleri sıfırla
+  // Saat farklarından kaçınmak için tarihleri sıfırlıyoruz
   cell.setHours(0, 0, 0, 0);
 
   try {
@@ -83,7 +83,6 @@ function applySelectFilter(cellValue: any, op: string, filterValue: string[]): b
   }
 }
 
-// --- Ana Hook ---
 
 export function useFilteredData<T>(
   data: T[],
@@ -94,7 +93,7 @@ export function useFilteredData<T>(
   const filteredData = useMemo(() => {
     let filtered = [...data];
 
-    // 1. Genel Arama (Global Search)
+    //  Genel Arama 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
       filtered = filtered.filter((row) => {
@@ -106,7 +105,7 @@ export function useFilteredData<T>(
       });
     }
 
-    // 2. Kolon Bazlı Filtreler (Column Filters)
+    //  Kolon Bazlı Filtreler 
     if (filters.length > 0) {
       filtered = filtered.filter(row => {
         // Her satır, TÜM aktif filtre koşullarını sağlamalı (every)

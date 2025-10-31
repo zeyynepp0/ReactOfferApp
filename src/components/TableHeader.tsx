@@ -1,4 +1,3 @@
-import React from 'react';
 import { FiArrowDown, FiArrowUp } from "react-icons/fi";
 import type { ColumnDef } from "../types/tableTypes";
 import type { SortConfig } from '../hooks/useSorting'; // useSorting'den SortConfig'i import ediyoruz
@@ -8,7 +7,7 @@ import NumberFilter from './NumberFilter';
 import DateFilter from './DateFilter';
 import SelectFilter from './SelectFilter';
 
-// T'yi generic olarak almamız gerekiyor
+
 interface TableHeaderProps<T> {
   columns: ColumnDef<T>[];
   sortConfig: SortConfig<T>;
@@ -17,7 +16,7 @@ interface TableHeaderProps<T> {
   selectOptionsMap: Map<string, SelectOption[]>;
 }
 
-// React.FC yerine bu şekilde generic kullanımı daha modern bir yaklaşımdır
+
 export default function TableHeader<T extends { id: string | number }>(
   { columns, sortConfig, handleSort, handleFilterChange, selectOptionsMap }: TableHeaderProps<T>
 ) {
