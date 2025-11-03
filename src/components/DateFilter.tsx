@@ -1,42 +1,6 @@
-/* import OperationSelection from "./OperationSelection";
-import type { ColumnFilterValue } from "./Table";
-
-
-const DateFilter = ({onValueChange}:{
-  onValueChange:(val:string, operationType:ColumnFilterValue['operationType']) => void
-}) => {
-  return (
-    <div>
-      <input type="date" onChange={(e) => {
-        onValueChange(e.target.value, "eq")
-      }} />
-
-
-      <OperationSelection
-      
-        operations={[
-          {
-            value: "eq",
-            label: "Eşittir",
-          },
-           {
-            value: "gte",
-            label: "Büyük eşittir",
-          },
-        ]}
-      />
-
-
-    </div>
-  );
-};
-
-export default DateFilter;
- */
-
 import React, { useState, useEffect } from 'react';
 import type { FilterCondition, DateOperation } from '../types/filterTypes';
-import OperationSelect from './OperationSelection';
+import OperationButton from './OperationButton';
 
 interface DateFilterProps {
   columnId: string;
@@ -87,7 +51,7 @@ const DateFilter: React.FC<DateFilterProps> = ({ columnId, onFilterChange }) => 
 
   return (
     <div className="space-y-2 mt-2" onClick={(e) => e.stopPropagation()}>
-      <OperationSelect
+      <OperationButton
         filterType="date"
         value={operation}
         onChange={(op) => handleOperationChange(op as DateOperation)}

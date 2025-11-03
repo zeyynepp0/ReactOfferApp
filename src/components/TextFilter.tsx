@@ -1,7 +1,7 @@
 // src/components/filters/TextFilter.tsx
 import React, { useState, useEffect } from 'react';
 import type { FilterCondition, TextOperation } from '../types/filterTypes';
-import OperationSelect from './OperationSelection';
+import OperationButton from './OperationButton';
 import useDebounce from '../hooks/useDebounce';
 
 interface TextFilterProps {
@@ -31,7 +31,7 @@ const debonceValue = useDebounce(immediateValue,300);
 
   return (
     <div className="space-y-2 mt-2" onClick={(e) => e.stopPropagation()}>
-      <OperationSelect
+      <OperationButton
         filterType="text"
         value={operation}
         onChange={(op) => setOperation(op as TextOperation)}

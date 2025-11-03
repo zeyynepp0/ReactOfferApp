@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { FilterCondition, NumberOperation } from '../types/filterTypes';
-import OperationSelect from './OperationSelection';
+import OperationButton from './OperationButton';
 import useDebounce from '../hooks/useDebounce';
 
 interface NumberFilterProps {
@@ -56,7 +56,7 @@ const[immediateValue, setImmediateValue] = useState<string |{from: string, to:st
 
   return (
     <div className="space-y-2 mt-2" onClick={(e) => e.stopPropagation()}>
-      <OperationSelect
+      <OperationButton
         filterType="number"
         value={operation}
         onChange={(op) => handleOperationChange(op as NumberOperation)}

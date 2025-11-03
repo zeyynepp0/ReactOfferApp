@@ -1,4 +1,4 @@
-import React, { useState, useMemo ,useEffect,useCallback} from 'react';
+import React, { useState, useMemo ,useEffect} from 'react';
 import useDebounce from '../hooks/useDebounce';
 import type { TableProps } from "../types/tableTypes"; //runtime bir değeri yok, o yüzden import type kullanmalıyız.
 import useSorting from '../hooks/useSorting';

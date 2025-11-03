@@ -1,4 +1,5 @@
 import { FiArrowDown, FiArrowUp } from "react-icons/fi";
+import { FaSort } from "react-icons/fa";
 import type { ColumnDef } from "../types/tableTypes";
 import type { SortConfig } from '../hooks/useSorting'; // useSorting'den SortConfig'i import ediyoruz
 import type { FilterCondition, SelectOption } from '../types/filterTypes';
@@ -23,18 +24,38 @@ export default function TableHeader<T extends { id: string | number }>(
   return (
     <thead>
       <tr>
-        {columns.map((col) => (
-          <th key={col.header} className="px-4 py-2 text-left">
+        {columns.map((col) => {
+          {/* <th key={col.header} className="px-4 py-2 text-left"> */}
+            const sortKey = col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null);
+            const isActive = sortConfig.key === sortKey;
+          
+            return (
+            <th key={col.header} className="px-4 py-2 text-left">
             {/* Başlık */}
             <div className="flex items-center justify-between"
                 onClick={() => handleSort(col)}>
               <span>{col.header}</span>
+
+
               {/* Aktif sıralama ikonu */}
-              {col.hideSort ? null : sortConfig.key === (col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null)) && (
+              {/* {col.hideSort ? null : sortConfig.key === (col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null)) && (
                 sortConfig.direction === 'asc' 
                   ? <FiArrowUp className="text-gray-600" /> 
                   : <FiArrowDown className="text-gray-600" />
-              )}
+              )} */}
+
+              {col.hideSort
+                  ? null // 1. hideSort true ise: Hiçbir ikon gösterme
+                  : isActive
+                    ? ( // 2. Aktif sıralama ise: Yön ikonunu (Aşağı/Yukarı) göster
+                      sortConfig.direction === 'asc'
+                        ? <FiArrowUp className="text-gray-600" />
+                        : <FiArrowDown className="text-gray-600" />
+                    )
+                    : ( // 3. Aktif değil ama sıralanabilir ise: Pasif (soluk) ikonu göster
+                      <FaSort className="text-gray-300" />
+                    )
+                }
             </div>
 
             {/* Filtre Alanı (Bileşenlere devredildi) */}
@@ -74,7 +95,8 @@ export default function TableHeader<T extends { id: string | number }>(
               />
             )}
           </th>
-        ))}
+            )
+        })}
       </tr>
     </thead>
   );

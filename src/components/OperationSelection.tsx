@@ -1,4 +1,4 @@
-import React from 'react';
+/* import React from 'react';
 import type { FilterOperations, TextOperation, NumberOperation, DateOperation, SelectOperation } from '../types/filterTypes';
 import type { FilterType } from '../types/tableTypes';
 
@@ -66,22 +66,5 @@ const OperationSelect: React.FC<OperationSelectProps> = ({ filterType, value, on
   );
 };
 
-
-
-/* const OperationSelection = ({
-  operations,
-}: {
-  operations: { value: string; label: string }[];
-}) => {
-  return (
-    <select>
-      {operations.map((op) => (
-        <option value={op.value} key={op.value}>
-          {op.label}
-        </option>
-      ))}
-    </select>
-  );
-}; */
-
 export default OperationSelect;
+ */

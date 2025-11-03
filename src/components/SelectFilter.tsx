@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import type { FilterCondition, SelectOperation, SelectOption } from '../types/filterTypes';
-import OperationSelect from './OperationSelection';
+import OperationButton from './OperationButton';
 
 interface SelectFilterProps {
   columnId: string;
@@ -37,7 +37,7 @@ const SelectFilter: React.FC<SelectFilterProps> = ({ columnId, onFilterChange, o
 
   return (
     <div className="space-y-2 mt-2" onClick={(e) => e.stopPropagation()}>
-      <OperationSelect
+      <OperationButton
         filterType="select"
         value={operation}
         onChange={(op) => setOperation(op as SelectOperation)}

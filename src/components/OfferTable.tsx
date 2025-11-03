@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Table } from './Table';
-import type { ColumnDef } from './Table'; 
+import type { ColumnDef } from '../types/tableTypes';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../redux/store';
 //import type { OfferItem } from '../redux/offersSlice';
@@ -33,7 +33,8 @@ const OfferTable: React.FC<OfferTableProps> = ({ setEditingOfferId }) => {
   const columns: ColumnDef<OfferItem>[] = [
     {
       header: 'Teklif No',
-      fieldKey: (_, index) => index + 1
+      fieldKey: (_, index) => index + 1,
+      hideSort: true,
       // filterKey yok, bu yüzden filtre render edilmez
     },
     {
