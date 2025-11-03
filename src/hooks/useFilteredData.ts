@@ -96,10 +96,11 @@ export function useFilteredData<T>(
     //  Genel Arama 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter((row) => {
+      filtered = filtered.filter((row,index) => {
         return columns.some((col: any) => {
-          if (typeof col.fieldKey === 'function') return false;
-          const cellValue = (row as any)[col.fieldKey];
+          // if (typeof col.fieldKey === 'function') return false;
+          // const cellValue = row[col.filterKey]
+          const cellValue = typeof col.fieldKey === 'function' ? col?.fieldKey(row,index) : (row as any)[col.fieldKey];
           return String(cellValue ?? '').toLowerCase().includes(lowerSearchTerm);
         });
       });

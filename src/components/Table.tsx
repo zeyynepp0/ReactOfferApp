@@ -2,7 +2,7 @@ import React, { useState, useMemo ,useEffect,useCallback} from 'react';
 import useDebounce from '../hooks/useDebounce';
 import type { TableProps } from "../types/tableTypes"; //runtime bir değeri yok, o yüzden import type kullanmalıyız.
 import useSorting from '../hooks/useSorting';
-import type { FilterCondition, SelectOption } from '../types/filterTypes';
+import type {  SelectOption } from '../types/filterTypes';
 import { useFilteredData } from '../hooks/useFilteredData';
 import TableHeader from './TableHeader';
 import TableBody from './TableBody';
