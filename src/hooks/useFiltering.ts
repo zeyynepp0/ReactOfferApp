@@ -19,11 +19,13 @@ export const useFiltering = (initialFilters: FilterCondition[] = []) => {
     });
   }, [setFilters]); 
   
-
+const clearAllFilters = useCallback(() => {
+    setFilters([]);
+  }, [setFilters]);
  
   return {
     filters,
     handleFilterChange,
-   
+    clearAllFilters,
   };
 };

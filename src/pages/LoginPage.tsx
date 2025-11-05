@@ -3,6 +3,7 @@ import { useLoginForm } from "../hooks/useLoginForm";
 import { useValidation } from "../hooks/useValidation";
 import { loginSchema, type LoginFormData } from "../schemas/validationSchemas";
 import ValidationAlert from "../components/ValidationAlert";
+import Input from "../components/Input";
 
 // Basit demo login sayfası (admin/123)
 export default function LoginPage() {
@@ -34,19 +35,21 @@ export default function LoginPage() {
         onSubmit={handleFormSubmit}
       >
         <h2 className="w-[107%] mb-7 text-[#f5a1bb] text-[50px]">Login</h2>
-        <input
-          className="w-full p-3 my-[10px] border border-[#f5a1bb] rounded-lg text-[15px] focus:border-[#aabed3] outline-none"
+        <Input
+          label="Kullanıcı adı"
           type="text"
           placeholder="Kullanıcı adı"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          autoComplete="username"
         />
-        <input
-          className="w-full p-3 my-[10px] border border-[#f5a1bb] rounded-lg text-[15px] focus:border-[#aabed3] outline-none"
+        <Input
+          label="Şifre"
           type="password"
           placeholder="Şifre"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
         />
         <button 
           className="w-[107%] p-3 bg-[#f5a1bb] text-white rounded-lg text-[16px] font-medium mt-[10px] transition-colors hover:bg-[#aabed3]" 

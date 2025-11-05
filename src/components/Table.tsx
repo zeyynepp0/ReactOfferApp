@@ -1,141 +1,119 @@
-import React, { useState, useMemo ,useEffect} from 'react';
-import useDebounce from '../hooks/useDebounce';
-import type { TableProps, ColumnDef } from "../types/tableTypes"; //runtime bir değeri yok, o yüzden import type kullanmalıyız.
+import React, { useMemo, useState } from 'react';
+import type { ColumnDef, TableProps } from '../types/tableTypes';
+import type { SelectOption } from '../types/filterTypes';
 import useSorting from '../hooks/useSorting';
-import type {  SelectOption } from '../types/filterTypes';
+import { useFiltering } from '../hooks/useFiltering';
 import { useFilteredData } from '../hooks/useFilteredData';
 import TableHeader from './TableHeader';
 import TableBody from './TableBody';
-import { useFiltering } from '../hooks/useFiltering';
+import { TableSettingsMenu } from './table/TableSettingsMenu';
+import { useColumnVisibility } from '../hooks/useColumnVisibility';
+import { useColumnOrder } from '../hooks/useColumnOrder';
+import { useSelectOptionsMap } from '../hooks/useSelectOptionsMap';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
 
-// Tablo Component'i
- export function Table<T extends { id: string | number }>(props: TableProps<T>) {
-  const {
-    columns,
-    data = [],
-    emptyDataText = "Gösterilecek veri yok",
-    onRowClick,
-  } = props;
- 
-  // State'ler
-  const [searchTerm, setSearchTerm] = useState('');
-  //const [columnFilters, setColumnFilters] = useState<ColumnFilterType<T>>(null)
- 
-  const [inputValue, setInputValue] = useState(''); // Input'un anlık değerini tutar
-  //const debouncedSearchTerm = useDebounce (searchTerm);// otomatik varsayılan değer gelir.
-  const debouncedSearchTerm = useDebounce (searchTerm,300);
-  
-  // Sütun görünürlüğü için yeni state
-  // Başlangıçta tüm sütunlar görünür (header'larına göre)
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    () => new Set(columns.map(c => c.header))
+export default function Table<T extends { id: string | number }>({
+  columns,
+  data = [],
+  emptyDataText = 'Veri bulunamadı',
+  onRowClick,
+}: TableProps<T>) {
+  // Sütun görünürlüğü ve sırası
+  const { visibleColumns, toggleColumnVisibility, visibleOrdered } = useColumnVisibility(columns);
+  const { columnOrder, setColumnOrder, orderedAllColumns, reorder } = useColumnOrder(columns);
+  const visibleOrderedColumns = useMemo(
+    () => visibleOrdered(orderedAllColumns),
+    [orderedAllColumns, visibleOrdered]
   );
 
+  // Filtreleme
+  const { filters, handleFilterChange, clearAllFilters } = useFiltering();
 
-const { filters, handleFilterChange } = useFiltering();
+  // Select filtreleri için opsiyon haritası (veriden türet)
+  const selectOptionsMap = useSelectOptionsMap(columns, data);
 
-// Veriyi filtrelemeden önce sütunları filtrele (görünür olanları al)
-  const filteredColumns = useMemo(() => {
-    return columns.filter(c => visibleColumns.has(c.header));
-  }, [columns, visibleColumns]);
+  // Arama (genel)
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Sütun görünürlüğünü değiştiren fonksiyon
-  const toggleColumnVisibility = (header: string) => {
-    setVisibleColumns(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(header)) {
-        // Son sütunsa gizlemeyi engelle (opsiyonel, ama iyi bir UX)
-        if (newSet.size > 1) {
-          newSet.delete(header);
-        }
-      } else {
-        newSet.add(header);
-      }
-      return newSet;
-    });
+  // Sıralama
+  const { sortConfig, handleSort, sortedData } = useSorting<T>(data);
+
+  // Filtre uygula + arama uygula
+  const { filteredData } = useFilteredData<T>(sortedData, visibleOrderedColumns, filters, searchTerm);
+
+  // Header sürükle-bırak sırası güncellemesi
+  const handleHeaderOrderChange = (activeId: string, overId: string) => {
+    reorder(activeId, overId);
   };
 
+  // DnD sensors and handlers
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
+  );
 
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      handleHeaderOrderChange(active.id as string, over.id as string);
+    }
+  }
 
-const { filteredData } = useFilteredData(data, columns, filters, debouncedSearchTerm);
-const { sortConfig, handleSort, sortedData } = useSorting(filteredData);
-
-const selectOptionsMap = useMemo(() => {
-    const map = new Map<string, SelectOption[]>();
-    
-    columns.forEach(col => {
-      if (col.filterType === 'select' && typeof col.filterKey === 'string') {
-        const uniqueValues = new Set(data.map(d => (d as any)[col.filterKey!]));
-        const options = Array.from(uniqueValues).map(val => ({
-          value: String(val),
-          label: String(val),
-        }));
-        map.set(col.filterKey, options);
-      }
-    });
-    return map;
-  }, [data, columns]);
-
-  
-  const handleInputChange = (e:React.ChangeEvent<HTMLInputElement>)=> {
-    const value = e.target.value;
-    setInputValue(value);
-    setSearchTerm(value);
-
-  };
-
-
-
-
-
-useEffect(() => {
-  console.log("filters state changed:", filters);
-}, [filters]);
-
- useEffect(() => {
-    console.log ("Arama,şu terimle tetiklendi:", debouncedSearchTerm );
-
-  },[debouncedSearchTerm]);
-
-  
   return (
-      <div className="bg-white rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] overflow-x-auto min-h-[400px]">
-          {/* Arama Input'u */}
-          
-          <input
-              className="border border-gray-300 rounded-md p-3 w-full focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-400 text-sm mb-4"
-              type="text"
-              placeholder="Arama..."
-              value={inputValue}
-              onChange={ handleInputChange }
-          />
-          
-          {/* Tablo */}
-          <table className="w-full border-collapse ">
-              {/* Tablo Başlıkları */}
-            <TableHeader
-                columns={filteredColumns} // Filtrelenmiş sütunları gönder
-                // allColumns={columns} // "Manage columns" için bu prop'a ihtiyaç olacak
-                sortConfig={sortConfig}
-                handleSort={handleSort}
-                filters={filters} // Filtre ikonunu göstermek için filters state'ini gönder
-                handleFilterChange={handleFilterChange}
-                selectOptionsMap={selectOptionsMap}
-                toggleColumnVisibility={toggleColumnVisibility} // Görünürlük fonksiyonunu gönder
-                // visibleColumns={visibleColumns} // "Manage columns" için
-             />
+    <div className="w-full relative">
+      <div className="flex items-center justify-between mb-2">
+        <input
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          placeholder="Ara"
+          className="border border-gray-300 rounded px-3 py-2 text-sm w-64"
+        />
+      </div>
 
-
-              {/* Tablo Gövdesi */}
-             <TableBody
-              columns={columns}
-              sortedData={sortedData}
+      <div className="border-slate-200 rounded-md overflow-y-auto min-h-[400px] bg-white">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <table className=" min-w-full border-collapse ">
+            <TableHeader<T>
+              columns={visibleOrderedColumns}
+              sortConfig={sortConfig}
+              handleSort={handleSort}
+              filters={filters}
+              handleFilterChange={handleFilterChange}
+              selectOptionsMap={selectOptionsMap}
+              toggleColumnVisibility={toggleColumnVisibility}
+              onColumnOrderChange={handleHeaderOrderChange}
+            />
+            <TableBody<T>
+              columns={visibleOrderedColumns}
+              sortedData={filteredData}
               emptyDataText={emptyDataText}
-              searchTerm={searchTerm} // 'Anlık' arama terimini mesaj için gönder
+              searchTerm={searchTerm}
               onRowClick={onRowClick}
             />
           </table>
+        </DndContext>
       </div>
-      
+
+      <TableSettingsMenu<T>
+        allColumns={columns}
+        visibleColumns={visibleColumns}
+        toggleColumnVisibility={toggleColumnVisibility}
+        clearAllFilters={clearAllFilters}
+        columnOrder={columnOrder}
+        setColumnOrder={setColumnOrder}
+      />
+    </div>
   );
 }
