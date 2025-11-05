@@ -14,7 +14,7 @@ export default function useSorting<T>(data: T[]) {//T tipinin ne olduğunu belir
   
     });
 
-   const handleSort = (col: ColumnDef<T>) => { // <-- Parametreyi 'key' yerine 'col' objesi olarak değiştirin
+   const handleSort = (col: ColumnDef<T>, direction?: 'asc' | 'desc') => { // <-- Parametreyi 'key' yerine 'col' objesi olarak değiştirin
       if(col.hideSort){
         return;
       }
@@ -25,12 +25,29 @@ export default function useSorting<T>(data: T[]) {//T tipinin ne olduğunu belir
       // Sıralanacak bir anahtar bulunamazsa (örn: fieldKey fonksiyon ve sortKey yoksa) işlemi durdur
       if (keyToSortBy === null) return; 
   
-      setSortConfig((prev) => {
+      /* setSortConfig((prev) => {
           if (prev.key === keyToSortBy) { // keyToSortBy değişkenini kullan
             // Aynı sütuna tıklandıysa yönü değiştir
             return {
                 key: keyToSortBy, // keyToSortBy değişkenini kullan
                 direction: prev.direction === 'asc' ? 'desc' : 'asc',
+            };
+          }
+          // Yeni bir sütuna tıklandıysa 'asc' ile başla
+          return { key: keyToSortBy, direction: 'asc' }; // keyToSortBy değişkenini kullan
+        });
+    }; */
+    setSortConfig((prev) => {
+          // Eğer menüden 'asc' veya 'desc' gibi net bir yön bilgisi geldiyse, onu ayarla
+          if (direction) {
+             return { key: keyToSortBy, direction: direction };
+          }
+          
+          // Eğer yön bilgisi gelmediyse (başlığa tıklandıysa), eski toggle mantığını uygula
+          if (prev.key === keyToSortBy) { // keyToSortBy değişkenini kullan
+            return {
+                key: keyToSortBy, // keyToSortBy değişkenini kullan
+                direction: prev.direction === 'asc' ? 'desc' : 'asc', // Toggle
             };
           }
           // Yeni bir sütuna tıklandıysa 'asc' ile başla

@@ -1,101 +1,98 @@
+import { useState } from 'react';
 import { FiArrowDown, FiArrowUp } from "react-icons/fi";
-import { FaSort } from "react-icons/fa";
+import { FaFilter } from "react-icons/fa";
+import { HiDotsVertical } from "react-icons/hi";
 import type { ColumnDef } from "../types/tableTypes";
 import type { SortConfig } from '../hooks/useSorting'; // useSorting'den SortConfig'i import ediyoruz
 import type { FilterCondition, SelectOption } from '../types/filterTypes';
-import TextFilter from './TextFilter';
-import NumberFilter from './NumberFilter';
-import DateFilter from './DateFilter';
-import SelectFilter from './SelectFilter';
-
+import ColumnMenu from './ColumnMenu';
 
 interface TableHeaderProps<T> {
   columns: ColumnDef<T>[];
   sortConfig: SortConfig<T>;
   handleSort: (col: ColumnDef<T>) => void;
+  filters: FilterCondition[];
   handleFilterChange: (columnId: string, filter: FilterCondition | null) => void;
   selectOptionsMap: Map<string, SelectOption[]>;
+  toggleColumnVisibility: (header: string) => void;
 }
 
 
 export default function TableHeader<T extends { id: string | number }>(
-  { columns, sortConfig, handleSort, handleFilterChange, selectOptionsMap }: TableHeaderProps<T>
+  { columns, sortConfig, handleSort, filters, handleFilterChange, selectOptionsMap, toggleColumnVisibility, }: TableHeaderProps<T>
 ) {
+  const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
+  const [startMenuInFilterMode, setStartMenuInFilterMode] = useState(false);
+  
+  const handleOpenEnu =(header: string, filterMode: boolean)=> {
+    if (menuOpenFor === header && filterMode === startMenuInFilterMode) {
+      setMenuOpenFor(null);
+    } else {
+      setMenuOpenFor(header);
+      setStartMenuInFilterMode(filterMode);
+    }
+  };
+  
+  
+  
+  
   return (
-    <thead>
+   <thead>
       <tr>
         {columns.map((col) => {
-          {/* <th key={col.header} className="px-4 py-2 text-left"> */}
-            const sortKey = col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null);
-            const isActive = sortConfig.key === sortKey;
-          
-            return (
-            <th key={col.header} className="px-4 py-2 text-left">
-            {/* Başlık */}
-            <div className="flex items-center justify-between"
-                onClick={() => handleSort(col)}>
-              <span>{col.header}</span>
+          const sortKey = col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null);
+          const isActive = sortConfig.key === sortKey;
+          // Bu sütunun aktif bir filtresi olup olmadığını kontrol et
+          const isFiltered = filters.some(f => f.columnId === col.filterKey);
 
+          return (
+     <th key={col.header} className="px-4 py-2 text-left relative "> {/* 'relative' ve 'group' eklendi */}
+              <div className="flex items-center justify-between">
+                
+                {/* Başlık ve sıralama ikonları */}
+                <div 
+                  className="flex items-center gap-1 cursor-pointer"
+                  onClick={() => handleSort(col)} // Başlığa tıklamak hala sıralama yapıyor
+                >
+                  <span>{col.header}</span>
+                  {/* Filtre ikonu (huni) */}
+                  {isFiltered && <FaFilter className="text-blue-500 text-xs" />}
+                  
+        {/* Sıralama ikonları */}
+        {col.hideSort ? null : isActive ? (
+            sortConfig.direction === 'asc'
+              ? <FiArrowUp className="text-gray-600" />
+              : <FiArrowDown className="text-gray-600" />
+        ) : null}
+                </div>
 
-              {/* Aktif sıralama ikonu */}
-              {/* {col.hideSort ? null : sortConfig.key === (col.sortKey ?? (typeof col.fieldKey === 'string' ? col.fieldKey : null)) && (
-                sortConfig.direction === 'asc' 
-                  ? <FiArrowUp className="text-gray-600" /> 
-                  : <FiArrowDown className="text-gray-600" />
-              )} */}
+                {/* "..." Menü Butonu */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // Sıralamayı tetiklemesin
+                    setMenuOpenFor(menuOpenFor === col.header ? null : col.header);
+                  }}
+                  
+                  className="p-1 rounded-md hover:bg-gray-200 "
+                >
+                  <HiDotsVertical className="text-gray-500" />
+                </button>
+              </div>
 
-              {col.hideSort
-                  ? null // 1. hideSort true ise: Hiçbir ikon gösterme
-                  : isActive
-                    ? ( // 2. Aktif sıralama ise: Yön ikonunu (Aşağı/Yukarı) göster
-                      sortConfig.direction === 'asc'
-                        ? <FiArrowUp className="text-gray-600" />
-                        : <FiArrowDown className="text-gray-600" />
-                    )
-                    : ( // 3. Aktif değil ama sıralanabilir ise: Pasif (soluk) ikonu göster
-                      <FaSort className="text-gray-300" />
-                    )
-                }
-            </div>
-
-            {/* Filtre Alanı (Bileşenlere devredildi) */}
-            {col.filterType === 'text' && col.filterKey && (
-              <TextFilter
-                columnId={col.filterKey as string}
-                onFilterChange={(filter) => 
-                  handleFilterChange(col.filterKey as string, filter)
-                }
-              />
-            )}
-            {col.filterType === 'number' && col.filterKey && (
-              <NumberFilter
-                columnId={col.filterKey as string}
-                onFilterChange={(filter) => 
-                  handleFilterChange(col.filterKey as string, filter)
-                }
-              />
-            )}
-            
-            {col.filterType === 'date' && col.filterKey && (
-              <DateFilter
-                columnId={col.filterKey as string}
-                onFilterChange={(filter) => 
-                  handleFilterChange(col.filterKey as string, filter)
-                }
-              />
-            )}
-            {col.filterType === 'select' && col.filterKey && (
-              <SelectFilter
-                columnId={col.filterKey as string}
-                onFilterChange={(filter) => 
-                  handleFilterChange(col.filterKey as string, filter)
-                }
-                options={selectOptionsMap.get(col.filterKey as string) || []}
-                isMulti={col.filterSelectIsMulti || false}
-              />
-            )}
-          </th>
-            )
+              {/* Eski filtre alanı kaldırıldı. Artık ColumnMenu render edilecek. */}
+              {menuOpenFor === col.header && (
+                <ColumnMenu
+                  column={col}
+                  sortConfig={sortConfig}
+                  handleSort={handleSort}
+                  handleFilterChange={handleFilterChange}
+                  handleHide={() => toggleColumnVisibility(col.header)}
+                  onClose={() => setMenuOpenFor(null)}
+                  selectOptions={selectOptionsMap.get(col.filterKey as string) || []}
+                />
+              )}
+            </th>
+          );
         })}
       </tr>
     </thead>
