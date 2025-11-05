@@ -1,15 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import type { ColumnDef, TableProps } from '../types/tableTypes';
-import type { SelectOption } from '../types/filterTypes';
-import useSorting from '../hooks/useSorting';
-import { useFiltering } from '../hooks/useFiltering';
-import { useFilteredData } from '../hooks/useFilteredData';
+import type { ColumnDef, TableProps } from '../../types/tableTypes';
+import type { SelectOption } from '../../types/filterTypes';
+import useSorting from '../../hooks/useSorting';
+import { useFiltering } from '../../hooks/useFiltering';
+import { useFilteredData } from '../../hooks/useFilteredData';
 import TableHeader from './TableHeader';
 import TableBody from './TableBody';
-import { TableSettingsMenu } from './table/TableSettingsMenu';
-import { useColumnVisibility } from '../hooks/useColumnVisibility';
-import { useColumnOrder } from '../hooks/useColumnOrder';
-import { useSelectOptionsMap } from '../hooks/useSelectOptionsMap';
+import { TableSettingsMenu } from './TableSettingsMenu';
+import { useColumnVisibility } from '../../hooks/useColumnVisibility';
+import { useColumnOrder } from '../../hooks/useColumnOrder';
+import { useSelectOptionsMap } from '../../hooks/useSelectOptionsMap';
 import {
   DndContext,
   closestCenter,
@@ -74,7 +74,7 @@ export default function Table<T extends { id: string | number }>({
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
           placeholder="Ara"
-          className="border border-gray-300 rounded px-3 py-2 text-sm w-64"
+          className="border border-gray-300 rounded-md p-3 w-full  focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-400 text-sm mb-4"
         />
       </div>
 

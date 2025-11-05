@@ -1,11 +1,11 @@
 import React, { useState , useEffect, useRef} from "react";
-import type {  FilterOperations } from '../types/filterTypes'; 
-import type { FilterType } from '../types/tableTypes'; 
+import type {  FilterOperations } from '../../types/filterTypes'; 
+import type { FilterType } from '../../types/tableTypes'; 
 import OperationButtonTrigger from './OperationButtonTrigger';
 import OperationDropdownMenu from './OperationDropdownMenu';
 
 // Sabit veriyi dışarıdan import ediyoruz
-import { FILTER_OPERATIONS_MAP } from '../constants/filterConstants';
+import { FILTER_OPERATIONS_MAP } from '../../constants/filterConstants';
 
 interface OperationButtonProps {
   filterType: FilterType;

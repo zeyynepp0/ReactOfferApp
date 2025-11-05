@@ -1,7 +1,7 @@
 // src/components/OperationDropdownMenu.tsx
 import React from 'react';
-import type { FilterOperations } from '../types/filterTypes';
-import type { OperationOption } from '../types/filterTypes'; // Tipi ana dosyadan alacağız
+import type { FilterOperations } from '../../types/filterTypes';
+import type { OperationOption } from '../../types/filterTypes'; // Tipi ana dosyadan alacağız
 import OperationDropdownItem from './OperationDropdownItem';
 
 interface OperationDropdownMenuProps {

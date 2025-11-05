@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
-import type { FilterCondition, SelectOperation, SelectOption } from '../types/filterTypes';
+import type { FilterCondition, SelectOperation, SelectOption } from '../../types/filterTypes';
 import OperationButton from './OperationButton';
 
 interface SelectFilterProps {

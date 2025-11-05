@@ -1,15 +1,15 @@
 // src/components/ColumnMenu.tsx
-import React, { useState, useRef, useEffect } from 'react';
-import type { ColumnDef } from '../types/tableTypes';
-import type { FilterCondition, SelectOption } from '../types/filterTypes';
-import type { SortConfig } from '../hooks/useSorting';
+import  { useState, useRef, useEffect } from 'react';
+import type { ColumnDef } from '../../types/tableTypes';
+import type { FilterCondition, SelectOption } from '../../types/filterTypes';
+import type { SortConfig } from '../../hooks/useSorting';
 import { FaSortUp, FaSortDown, FaFilter, FaEyeSlash } from 'react-icons/fa';
 
 // Filter bileşenlerini import et
-import TextFilter from './TextFilter';
-import NumberFilter from './NumberFilter';
-import DateFilter from './DateFilter';
-import SelectFilter from './SelectFilter';
+import TextFilter from '../filters/TextFilter';
+import NumberFilter from '../filters/NumberFilter';
+import DateFilter from '../filters/DateFilter';
+import SelectFilter from '../filters/SelectFilter';
 
 interface ColumnMenuProps<T> {
   column: ColumnDef<T>;
@@ -24,7 +24,7 @@ interface ColumnMenuProps<T> {
 
 export default function ColumnMenu<T>({
   column,
-  sortConfig,
+  //sortConfig,
   handleSort,
   handleFilterChange,
   handleHide,
@@ -88,7 +88,7 @@ export default function ColumnMenu<T>({
             isMulti={column.filterSelectIsMulti || false}
           />
         )}
-        {/* "X" butonu yerine "Filtreyi Temizle" butonu */}
+        {/*"Filtreyi Temizle" butonu */}
         <button
           onClick={() => {
             handleFilterChange(columnId, null);

@@ -1,8 +1,8 @@
 // src/components/OfferItemTable.tsx
 import React from 'react';
 import type { Control, UseFormSetValue, UseFormTrigger, FieldArrayWithId, FieldErrors } from "react-hook-form";
-import type { OfferFormData, OfferLineItemFormData } from "../schemas/validationSchemas";
-import ItemRow from './offer-modal/ItemRow'; // ItemRow'u import ediyoruz
+import type { OfferFormData, OfferLineItemFormData } from "../../schemas/validationSchemas";
+import ItemRow from '../offer-modal/ItemRow'; // ItemRow'u import ediyoruz
 
 interface OfferItemTableProps {
   isApproved: boolean;

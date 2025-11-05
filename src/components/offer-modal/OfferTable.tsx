@@ -1,14 +1,14 @@
 // src/components/OfferTable.tsx
 
 import React from 'react';
-import Table from './Table';
-import type { ColumnDef } from '../types/tableTypes';
+import Table from '../table/Table';
+import type { ColumnDef } from '../../types/tableTypes';
 import { useSelector, useDispatch } from 'react-redux';
-import type { RootState } from '../redux/store';
+import type { RootState } from '../../redux/store';
 //import type { OfferItem } from '../redux/offersSlice';
-import { deleteOffer, type OfferItem } from '../redux/offersSlice';
+import { deleteOffer, type OfferItem } from '../../redux/offersSlice';
 import { toast } from 'react-toastify'
-import { createOfferColumns } from './columns/offerColumns';
+import { createOfferColumns } from './../columns/offerColumns';
 
 interface OfferTableProps {
   setEditingOfferId: (id: string | null) => void;

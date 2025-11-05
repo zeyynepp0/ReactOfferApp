@@ -2,18 +2,18 @@
 import { useEffect, useMemo } from "react";
 import { useForm, useFieldArray, type UseFormTrigger, type FieldErrors, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { offerSchema, type OfferFormData, type OfferLineItemFormData } from '../schemas/validationSchemas';
-import Input from "./Input";
+import { offerSchema, type OfferFormData, type OfferLineItemFormData } from '../../schemas/validationSchemas';
+import Input from "../Input";
 import OfferItemTable from "./OfferItemTable";
-import TotalsSummary from "./offer-modal/TotalsSummary";
+import TotalsSummary from "./TotalsSummary";
 import { v4 as uuidv4 } from "uuid";
 import { useDispatch, useSelector } from "react-redux";
-import { addOffer, updateOffer, deleteOffer } from "../redux/offersSlice";
-import type { OfferItem, OfferLineItem } from "../redux/offersSlice";
-import { computeTotals } from "../utils/offerCalculations";
-import type { RootState } from "../redux/store";
+import { addOffer, updateOffer, deleteOffer } from "../../redux/offersSlice";
+import type { OfferItem, OfferLineItem } from "../../redux/offersSlice";
+import { computeTotals } from "../../utils/offerCalculations";
+import type { RootState } from "../../redux/store";
 import { toast } from 'react-toastify';
-import ButtonInput from "./ButtonInput";
+import ButtonInput from "../ButtonInput";
 //import Test from "./Test";
 
 interface NewOfferModalProps {

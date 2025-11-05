@@ -8,7 +8,7 @@ import { HiDotsVertical } from "react-icons/hi";
 import type { ColumnDef } from '../../types/tableTypes';
 import type { SortConfig } from '../../hooks/useSorting';
 import type { FilterCondition, SelectOption } from '../../types/filterTypes';
-import ColumnMenu from '../ColumnMenu'; // ColumnMenu'yü burada render ediyoruz
+import ColumnMenu from './ColumnMenu'; // ColumnMenu'yü burada render ediyoruz
 
 interface SortableHeaderCellProps<T> {
   column: ColumnDef<T>;

@@ -1,7 +1,7 @@
 import React from 'react';
 import Sidebar from '../components/Sidebar';
-import OfferTable from '../components/OfferTable';
-import NewOfferModal from '../components/NewOfferModal';
+import OfferTable from '../components/offer-modal/OfferTable';
+import NewOfferModal from '../components/offer-modal/NewOfferModal';
 import { useSidebar } from '../hooks/useSidebar';
 import { useModal } from '../hooks/useModal';
 

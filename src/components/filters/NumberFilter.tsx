@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import type { FilterCondition, NumberOperation } from '../types/filterTypes';
+import type { FilterCondition, NumberOperation } from '../../types/filterTypes';
 import OperationButton from './OperationButton';
-import useDebounce from '../hooks/useDebounce';
+import useDebounce from '../../hooks/useDebounce';
 
 interface NumberFilterProps {
   columnId: string;

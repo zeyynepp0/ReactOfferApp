@@ -1,6 +1,6 @@
 import React from 'react';
 // tableTypes.ts dosyasından ColumnDef tipini import ediyoruz
-import type { ColumnDef } from '../types/tableTypes'; 
+import type { ColumnDef } from '../../types/tableTypes'; 
 
 // T'nin Table.tsx'teki gibi bir id'ye sahip olmasını sağlıyoruz
 interface TableBodyProps<T extends { id: string | number }> {

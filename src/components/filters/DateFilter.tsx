@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { FilterCondition, DateOperation } from '../types/filterTypes';
+import type { FilterCondition, DateOperation } from '../../types/filterTypes';
 import OperationButton from './OperationButton';
 
 interface DateFilterProps {

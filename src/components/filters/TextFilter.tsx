@@ -1,8 +1,8 @@
 // src/components/filters/TextFilter.tsx
 import React, { useState, useEffect } from 'react';
-import type { FilterCondition, TextOperation } from '../types/filterTypes';
+import type { FilterCondition, TextOperation } from '../../types/filterTypes';
 import OperationButton from './OperationButton';
-import useDebounce from '../hooks/useDebounce';
+import useDebounce from '../../hooks/useDebounce';
 
 interface TextFilterProps {
   columnId: string;
