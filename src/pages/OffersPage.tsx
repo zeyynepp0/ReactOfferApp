@@ -4,13 +4,13 @@ import OfferTable from '../components/offer-modal/OfferTable';
 import NewOfferModal from '../components/offer-modal/NewOfferModal';
 import { useSidebar } from '../hooks/useSidebar';
 import { useModal } from '../hooks/useModal';
-import Test from './Test';
+
 
 const OffersPage: React.FC = () => {// OffersPage bileşeni
   const { isOpen: sidebarOpen, toggleSidebar } = useSidebar();// sidebar durumunu yönetmek için useSidebar hook'unu kullanıyoruz
   const { isOpen: modalOpen, editingId: editingOfferId, openForCreate, openForEdit, closeModal } = useModal();// modal durumunu yönetmek için useModal hook'unu kullanıyoruz
 
-  //return <Test/>
+
 
   return (
     <div className="flex h-screen w-screen bg-[linear-gradient(135deg,#aabed3,#fed6e3)] relative">

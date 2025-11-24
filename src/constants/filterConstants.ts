@@ -1,4 +1,3 @@
-// src/constants/filterConstants.ts
 import type { FilterType } from '../types/tableTypes';
 import type { OperationOption } from '../types/filterTypes';
 

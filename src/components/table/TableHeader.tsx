@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// DÜZELTME: Gereksiz ikon/bileşen import'ları kaldırıldı
 import type { ColumnDef } from "../../types/tableTypes";
 import type { SortConfig } from '../../hooks/useSorting';
 import type { FilterCondition, SelectOption } from '../../types/filterTypes';

@@ -23,8 +23,9 @@ export interface SelectOption {
   label: string;
 }
 
-export type OperationOption = { 
-  value: FilterOperations; 
-  label: string; 
-  description: string;
+export type OperationOption = {
+  value: FilterOperations;
+  label: string;
+  description?: string;
+  children?: OperationOption[];
 };

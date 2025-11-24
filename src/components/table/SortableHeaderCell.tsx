@@ -4,7 +4,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FiArrowDown, FiArrowUp } from "react-icons/fi";
 import { FaFilter } from "react-icons/fa";
-import { HiDotsVertical } from "react-icons/hi";
+import { HiDotsVertical, HiMenu } from "react-icons/hi";
 import type { ColumnDef } from '../../types/tableTypes';
 import type { SortConfig } from '../../hooks/useSorting';
 import type { FilterCondition, SelectOption } from '../../types/filterTypes';
@@ -40,6 +40,8 @@ export function SortableHeaderCell<T>({
   toggleColumnVisibility,
   selectOptions,
 }: SortableHeaderCellProps<T>) {
+  const headerRef = React.useRef<HTMLElement | null>(null);
+  const [anchor, setAnchor] = React.useState<{ top: number; left: number; width?: number } | null>(null);
   const {
     attributes,
     listeners,
@@ -62,35 +64,55 @@ export function SortableHeaderCell<T>({
   const handleMenuToggle = (filterMode: boolean) => {
     if (menuOpenFor === column.header && filterMode === startMenuInFilterMode) {
       setMenuOpenFor(null);
-    } else {
-      setMenuOpenFor(column.header);
-      setStartMenuInFilterMode(filterMode);
+      setAnchor(null);
+      return;
     }
+    const el = headerRef.current;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      setAnchor({ top: r.bottom + window.scrollY, left: r.left + window.scrollX, width: r.width });
+    } else {
+      setAnchor(null);
+    }
+    setMenuOpenFor(column.header);
+    setStartMenuInFilterMode(filterMode);
   };
 
   return (
     <>
     <th
-      ref={setNodeRef}
+      ref={(el) => { setNodeRef(el); headerRef.current = el; }}
       style={style}
-      className="px-4 py-2 text-left relative bg-white" // 'relative' pozisyonu ColumnMenu için kritik
+      className="px-4 py-2 text-left bg-white"
     >
       <div className="flex items-center justify-between">
         <div 
-          className="flex items-center gap-1 cursor-pointer"
-          onClick={onSort}
-          {...attributes} // Sürükleme özelliklerini başlığa ata
-          {...listeners} // Sürükleme dinleyicilerini başlığa ata
+          className="flex items-center gap-2"
         >
-          <span>{column.header}</span>
-          
-          {isFiltered && <FaFilter className="text-blue-500 text-xs ml-1" />}
-          
-          {column.hideSort ? null : isActive ? (
-              sortConfig.direction === 'asc'
-                ? <FiArrowUp className="text-gray-600" />
-                : <FiArrowDown className="text-gray-600" />
-          ) : null}
+          {/* Drag handle: sadece bu butona sürükleme listener'ları uygulanır. */}
+          <button
+            {...attributes}
+            {...listeners}
+            aria-label="Sütunu taşı"
+            className="p-1 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+            onClick={(e) => e.stopPropagation()} // handle click won't toggle sort
+          >
+            <HiMenu />
+          </button>
+
+          <div
+            className="flex items-center gap-1 cursor-pointer"
+            onClick={onSort}
+          >
+            <span>{column.header}</span>
+            {isFiltered && <FaFilter className="text-blue-500 text-xs ml-1" />}
+
+            {column.hideSort ? null : isActive ? (
+                sortConfig.direction === 'asc'
+                  ? <FiArrowUp className="text-gray-600" />
+                  : <FiArrowDown className="text-gray-600" />
+            ) : null}
+          </div>
         </div>
 
         {/* Sütun bazlı "..." menü butonu */}
@@ -110,18 +132,13 @@ export function SortableHeaderCell<T>({
         <ColumnMenu
           column={column}
           sortConfig={sortConfig}
-          handleSort={(col, dir) => {
-            handleSort(col, dir); 
-            setMenuOpenFor(null); // İşlem sonrası menüyü kapat
-          }}
+          handleSort={(col, dir) => { handleSort(col, dir); setMenuOpenFor(null); setAnchor(null); }}
           handleFilterChange={handleFilterChange}
-          handleHide={() => {
-            toggleColumnVisibility(column.header);
-            setMenuOpenFor(null); // İşlem sonrası menüyü kapat
-          }}
-          onClose={() => setMenuOpenFor(null)}
+          handleHide={() => { toggleColumnVisibility(column.header); setMenuOpenFor(null); setAnchor(null); }}
+          onClose={() => { setMenuOpenFor(null); setAnchor(null); }}
           selectOptions={selectOptions}
           startInFilterView={startMenuInFilterMode}
+          anchor={anchor}
         />
       )}
     </th>
