@@ -1,22 +1,21 @@
-import React, { useState } from 'react';
-import { HiDotsVertical } from 'react-icons/hi';
+import React from "react";
+import { HiDotsVertical } from "react-icons/hi";
 import {
   DndContext,
-  closestCenter,
-  KeyboardSensor,
   PointerSensor,
+  closestCenter,
   useSensor,
   useSensors,
   type DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   SortableContext,
   arrayMove,
-  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { SortableColumnItem } from './SortableColumnItem';
-import type { ColumnDef } from '../../types/tableTypes';
+} from "@dnd-kit/sortable";
+import Menu from "../menu/Menu";
+import { SortableColumnItem } from "./SortableColumnItem";
+import type { ColumnDef } from "../../types/tableTypes";
 
 interface TableSettingsMenuProps<T> {
   allColumns: ColumnDef<T>[];
@@ -35,96 +34,68 @@ export function TableSettingsMenu<T>({
   columnOrder,
   setColumnOrder,
 }: TableSettingsMenuProps<T>) {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRef = React.useRef<HTMLDivElement>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
-  // Dışarıya tıklamayı algıla ve menüyü kapat
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [menuRef]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+  const orderedColumns = React.useMemo(
+    () =>
+      columnOrder
+        .map((header) => allColumns.find((col) => col.header === header))
+        .filter(Boolean) as ColumnDef<T>[],
+    [columnOrder, allColumns]
   );
 
-  function handleDragEnd(event: DragEndEvent) {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-    if (over && active.id !== over.id) {
-      const oldIndex = columnOrder.indexOf(active.id as string);
-      const newIndex = columnOrder.indexOf(over.id as string);
-      setColumnOrder(arrayMove(columnOrder, oldIndex, newIndex));
-    }
-  }
+    const sourceIndex = columnOrder.indexOf(active.id as string);
+    const targetIndex = columnOrder.indexOf(over.id as string);
+    setColumnOrder(arrayMove(columnOrder, sourceIndex, targetIndex));
+  };
 
-  // Sütun sırasını (string dizisi) render edilecek ColumnDef objelerine dönüştür
-  const orderedColumns = React.useMemo(() => {
-    return columnOrder
-      .map(header => allColumns.find(col => col.header === header))
-      .filter(Boolean) as ColumnDef<T>[];
-  }, [columnOrder, allColumns]);
+  const trigger = (
+    <button className="p-2 rounded-full hover:bg-gray-200" aria-label="Tablo ayarları">
+      <HiDotsVertical className="text-gray-700 h-5 w-5" />
+    </button>
+  );
 
   return (
-    <div className="absolute top-2 right-2 z-30" ref={menuRef}>
-      <button
-        onClick={() => setIsOpen(prev => !prev)}
-        className="p-2 rounded-full hover:bg-gray-200"
-        aria-label="Tablo ayarları"
-      >
-        <HiDotsVertical className="text-gray-700 h-5 w-5" />
-      </button>
-
-      {isOpen && (
-        <div className="absolute top-full right-0 mt-1 w-72 bg-white border border-gray-300 rounded-md shadow-lg">
-          <div className="p-2 border-b">
+    <div className="absolute top-2 right-2 z-30">
+      <Menu
+        trigger={trigger}
+        side="left"
+        content={(closeMenu) => (
+          <div className="w-72">
             <button
               onClick={() => {
                 clearAllFilters();
-                setIsOpen(false);
+                closeMenu();
               }}
-              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
             >
               Tüm Filtreleri Temizle
             </button>
+            <div className="border-t border-gray-100 px-3 py-2 text-sm font-semibold text-gray-800">
+              Sütunları Yönet
+            </div>
+            <div className="max-h-64 overflow-y-auto">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={columnOrder} strategy={verticalListSortingStrategy}>
+                  {orderedColumns.map((col) => (
+                    <SortableColumnItem
+                      key={col.header}
+                      id={col.header}
+                      column={col}
+                      isVisible={visibleColumns.has(col.header)}
+                      onToggleVisibility={() => toggleColumnVisibility(col.header)}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            </div>
           </div>
-          <div className="p-2 font-semibold text-sm text-gray-800 border-b">
-            Sütunları Yönet
-          </div>
-          <div className="max-h-60 overflow-y-auto">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={columnOrder}
-                strategy={verticalListSortingStrategy}
-              >
-                {orderedColumns.map(col => (
-                  <SortableColumnItem
-                    key={col.header}
-                    id={col.header}
-                    column={col}
-                    isVisible={visibleColumns.has(col.header)}
-                    onToggleVisibility={() => toggleColumnVisibility(col.header)}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
-          </div>
-        </div>
-      )}
+        )}
+      />
     </div>
   );
 }

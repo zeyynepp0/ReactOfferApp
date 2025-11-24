@@ -1,4 +1,4 @@
-import { cloneElement, useMemo, useState, type ReactElement } from "react";
+import { cloneElement, useMemo, useState, type ReactElement, type ReactNode } from "react";
 
 export type MenuItem = {
   id: string;
@@ -9,10 +9,12 @@ export type MenuItem = {
 
 type MenuProps = {
   trigger: ReactElement<any>;
-  items: MenuItem[];
+  items?: MenuItem[];
+  content?: ReactNode | ((close: () => void) => ReactNode);
+  side?: "left" | "right";
 };
 
-const Menu = ({ trigger, items }: MenuProps) => {
+const Menu = ({ trigger, items = [], content, side = "right" }: MenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
 
@@ -48,10 +50,17 @@ const Menu = ({ trigger, items }: MenuProps) => {
         <div className="fixed inset-0 z-40" onClick={closeMenu}>
           <div
             className="absolute z-50 rounded-md border border-gray-200 bg-white shadow-lg"
-            style={{ top: position.top, left: position.left, minWidth: position.width }}
+            style={{
+              top: position.top,
+              left: position.left,
+              minWidth: position.width,
+              transform: side === "left" ? "translateX(-100%)" : undefined,
+            }}
             onClick={(event) => event.stopPropagation()}
           >
-            <MenuList items={items} onItemSelect={closeMenu} />
+            {typeof content === "function"
+              ? content(closeMenu)
+              : content ?? <MenuList items={items} onItemSelect={closeMenu} />}
           </div>
         </div>
       )}
