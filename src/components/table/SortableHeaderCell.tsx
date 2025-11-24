@@ -69,6 +69,7 @@ export function SortableHeaderCell<T>({
   };
 
   return (
+    <>
     <th
       ref={setNodeRef}
       style={style}
@@ -124,5 +125,7 @@ export function SortableHeaderCell<T>({
         />
       )}
     </th>
+    </>
+
   );
 }

@@ -78,7 +78,7 @@ export default function Table<T extends { id: string | number }>({
         />
       </div>
 
-      <div className="border-slate-200 rounded-md overflow-y-auto min-h-[400px] bg-white">
+      <div className="border-slate-200 rounded-md overflow-y-auto  bg-white">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}

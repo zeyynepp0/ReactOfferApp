@@ -1,4 +1,4 @@
-// src/components/OperationDropdownItem.tsx
+
 import React from 'react';
 import type { OperationOption } from '../../types/filterTypes'; // Tipi ana dosyadan alacağız
 

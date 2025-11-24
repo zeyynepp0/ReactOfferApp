@@ -105,7 +105,7 @@ export default function ColumnMenu<T>({
   return (
     <div
       ref={menuRef}
-      className="absolute top-full right-0 mt-1 w-64 bg-white border border-gray-300 rounded-md shadow-lg z-20"
+      className="absolute top-full right-0 mt-1 w-64 bg-white border border-gray-300 rounded-md shadow-lg z-10"
       onClick={(e) => e.stopPropagation()} // Arka plana tıklamayı engelle
     >
       {!showFilter ? (
